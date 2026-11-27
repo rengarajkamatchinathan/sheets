@@ -20,7 +20,15 @@ const LANGS = [
   { id: "go", label: "Go", file: "solution.go" },
 ];
 
-export default function ProblemEditor({ initial, topicSlug }: { initial: Initial; topicSlug: string }) {
+export default function ProblemEditor({
+  initial,
+  topicSlug,
+  patterns,
+}: {
+  initial: Initial;
+  topicSlug: string;
+  patterns: { id: number; name: string }[];
+}) {
   const [saved, setSaved] = useState(initial);
   const [d, setD] = useState(initial);
   const [tagsText, setTagsText] = useState(initial.tags.join(", "));
@@ -108,6 +116,18 @@ export default function ProblemEditor({ initial, topicSlug }: { initial: Initial
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            aria-pressed={d.starred}
+            aria-label={d.starred ? "Unstar" : "Star"}
+            title={d.starred ? "Starred" : "Star to revisit"}
+            onClick={() => set("starred", !d.starred)}
+            className={`flex h-11 w-11 items-center justify-center rounded-lg border border-line2 hover:bg-chip ${d.starred ? "text-medium" : "text-mute"}`}
+          >
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill={d.starred ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+              <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" />
+            </svg>
+          </button>
           <span className="text-xs text-mute" aria-live="polite">
             {pending ? "Saving…" : error ? <span className="text-hard">{error}</span> : dirty ? "Unsaved changes" : "All changes saved"}
           </span>
@@ -123,6 +143,20 @@ export default function ProblemEditor({ initial, topicSlug }: { initial: Initial
             <option>Todo</option>
             <option>Attempted</option>
             <option>Solved</option>
+          </select>
+        </Field>
+        <Field label="Pattern">
+          <select
+            value={d.patternId ?? ""}
+            onChange={(e) => set("patternId", e.target.value ? Number(e.target.value) : null)}
+            className={inputCls}
+          >
+            <option value="">Unsorted</option>
+            {patterns.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
           </select>
         </Field>
         <Field label="Difficulty">

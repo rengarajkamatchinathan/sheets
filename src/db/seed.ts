@@ -1,6 +1,8 @@
 import { config } from "dotenv";
 config({ path: ".env.local" });
 import { slugify } from "../lib/slug";
+import { NOTES_TEMPLATE } from "../lib/template";
+import { seedPatterns } from "./seed-patterns";
 
 type D = "Easy" | "Medium" | "Hard";
 type Row = [title: string, lc: number, diff: D];
@@ -102,18 +104,6 @@ const SHEET: { name: string; problems: Row[] }[] = [
   ] },
 ];
 
-const NOTES_TEMPLATE = `## Intuition
-
-
-## Approach
-1.
-
-## Edge cases
--
-
-## Mistakes
--
-`;
 
 async function main() {
   const { db } = await import("./index");
@@ -121,7 +111,8 @@ async function main() {
 
   const existing = await db.select({ id: topics.id }).from(topics).limit(1);
   if (existing.length > 0) {
-    console.log("Topics already exist — skipping seed.");
+    console.log("Topics already exist — skipping problem seed.");
+    await seedPatterns();
     return;
   }
 
@@ -145,6 +136,7 @@ async function main() {
     total += t.problems.length;
   }
   console.log(`Seeded ${SHEET.length} topics, ${total} problems.`);
+  await seedPatterns();
 }
 
 main().catch((e) => {

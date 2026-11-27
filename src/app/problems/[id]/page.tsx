@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import ProblemEditor from "@/components/ProblemEditor";
-import { getProblem } from "@/lib/queries";
+import { getPatternsForTopic, getProblem } from "@/lib/queries";
 
 export default async function ProblemPage({ params }: PageProps<"/problems/[id]">) {
   await connection();
@@ -11,7 +11,8 @@ export default async function ProblemPage({ params }: PageProps<"/problems/[id]"
   if (!Number.isInteger(n)) notFound();
   const row = await getProblem(n);
   if (!row) notFound();
-  const { problem: p, topic } = row;
+  const { problem: p, topic, patternName } = row;
+  const patterns = await getPatternsForTopic(topic.id);
 
   return (
     <div className="flex flex-col gap-5">
@@ -23,10 +24,12 @@ export default async function ProblemPage({ params }: PageProps<"/problems/[id]"
         <Link href={`/topics/${topic.slug}`} className="text-accent-soft hover:underline">
           {topic.name}
         </Link>{" "}
-        / {p.title}
+        / {patternName ? <>{patternName} / </> : null}
+        {p.title}
       </nav>
       <ProblemEditor
         topicSlug={topic.slug}
+        patterns={patterns}
         initial={{
           id: p.id,
           title: p.title,
@@ -34,6 +37,8 @@ export default async function ProblemPage({ params }: PageProps<"/problems/[id]"
           lcNumber: p.lcNumber,
           difficulty: p.difficulty,
           status: p.status,
+          patternId: p.patternId,
+          starred: p.starred,
           tags: p.tags,
           notes: p.notes,
           code: p.code,

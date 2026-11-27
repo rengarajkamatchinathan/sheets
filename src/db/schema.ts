@@ -2,6 +2,7 @@ import {
   pgTable,
   pgEnum,
   serial,
+  boolean,
   text,
   integer,
   timestamp,
@@ -20,6 +21,21 @@ export const topics = pgTable("topics", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** A pattern (sub-topic) groups problems inside a topic, e.g. Sliding Window → Variable-size window. */
+export const patterns = pgTable(
+  "patterns",
+  {
+    id: serial("id").primaryKey(),
+    topicId: integer("topic_id")
+      .notNull()
+      .references(() => topics.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("patterns_topic_idx").on(t.topicId)],
+);
+
 export const problems = pgTable(
   "problems",
   {
@@ -27,6 +43,9 @@ export const problems = pgTable(
     topicId: integer("topic_id")
       .notNull()
       .references(() => topics.id, { onDelete: "cascade" }),
+    // null = "Unsorted" within the topic; deleting a pattern keeps its problems.
+    patternId: integer("pattern_id").references(() => patterns.id, { onDelete: "set null" }),
+    starred: boolean("starred").notNull().default(false),
     title: text("title").notNull(),
     url: text("url").notNull().default(""),
     lcNumber: integer("lc_number"),
@@ -44,10 +63,15 @@ export const problems = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("problems_topic_idx").on(t.topicId), index("problems_solved_idx").on(t.solvedAt)],
+  (t) => [
+    index("problems_topic_idx").on(t.topicId),
+    index("problems_pattern_idx").on(t.patternId),
+    index("problems_solved_idx").on(t.solvedAt),
+  ],
 );
 
 export type Topic = typeof topics.$inferSelect;
+export type Pattern = typeof patterns.$inferSelect;
 export type Problem = typeof problems.$inferSelect;
 export type Difficulty = (typeof difficultyEnum.enumValues)[number];
 export type Status = (typeof statusEnum.enumValues)[number];

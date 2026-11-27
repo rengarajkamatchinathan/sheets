@@ -13,12 +13,13 @@ Stack: Next.js 16 (App Router, Server Actions) · Tailwind v4 · Drizzle ORM · 
    APP_TIMEZONE="Asia/Kolkata"   # day boundaries for the activity heatmap
    ```
 
-2. Install, create tables, seed the NeetCode 150 sheet (seed skips if topics already exist):
+2. Install, create tables, seed the NeetCode 150 sheet and its default patterns (re-running is safe: existing topics, and topics that already have patterns, are skipped):
 
    ```
    npm install
    npm run db:push
-   npm run db:seed
+   npm run db:seed            # topics + problems + patterns
+   npm run db:seed-patterns   # patterns only, for databases seeded before patterns existed
    ```
 
 3. `npm run dev` → http://localhost:3000

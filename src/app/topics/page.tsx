@@ -137,10 +137,11 @@ export default async function TopicsPage({ searchParams }: PageProps<"/topics">)
                   </div>
                   <Bar value={t.solved} max={t.total} />
                 </div>
-                <div className="flex gap-3 font-mono text-xs">
+                <div className="flex items-center gap-3 font-mono text-xs">
                   <span className="text-easy">E {t.easy}</span>
                   <span className="text-medium">M {t.medium}</span>
                   <span className="text-hard">H {t.hard}</span>
+                  <span className="ml-auto font-sans text-mute">{t.patterns} patterns</span>
                 </div>
               </Link>
             );

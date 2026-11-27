@@ -1,7 +1,8 @@
 import "server-only";
 import { asc, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { problems, topics } from "@/db/schema";
+import { patterns, problems, topics } from "@/db/schema";
+import { hasRealNotes } from "./template";
 import { TZ } from "./dates";
 
 export type TopicStat = {
@@ -14,6 +15,7 @@ export type TopicStat = {
   easy: number;
   medium: number;
   hard: number;
+  patterns: number;
 };
 
 export async function getTopicStats(): Promise<TopicStat[]> {
@@ -28,6 +30,7 @@ export async function getTopicStats(): Promise<TopicStat[]> {
       easy: sql<number>`count(*) filter (where ${problems.difficulty} = 'Easy')::int`,
       medium: sql<number>`count(*) filter (where ${problems.difficulty} = 'Medium')::int`,
       hard: sql<number>`count(*) filter (where ${problems.difficulty} = 'Hard')::int`,
+      patterns: sql<number>`(select count(*) from ${patterns} where ${patterns.topicId} = ${topics.id})::int`,
     })
     .from(topics)
     .leftJoin(problems, eq(problems.topicId, topics.id))
@@ -87,19 +90,64 @@ export async function getTopicBySlug(slug: string) {
   return t ?? null;
 }
 
-export async function getProblemsForTopic(topicId: number) {
+export type BoardProblem = {
+  id: number;
+  title: string;
+  url: string;
+  lcNumber: number | null;
+  difficulty: "Easy" | "Medium" | "Hard";
+  status: "Todo" | "Attempted" | "Solved";
+  starred: boolean;
+  patternId: number | null;
+  tags: string[];
+  hasNotes: boolean;
+  hasCode: boolean;
+};
+
+/** Everything the topic page's accordion needs, in display order. */
+export async function getTopicBoard(topicId: number) {
+  const [pats, rows] = await Promise.all([
+    getPatternsForTopic(topicId),
+    db
+      .select({
+        id: problems.id,
+        title: problems.title,
+        url: problems.url,
+        lcNumber: problems.lcNumber,
+        difficulty: problems.difficulty,
+        status: problems.status,
+        starred: problems.starred,
+        patternId: problems.patternId,
+        tags: problems.tags,
+        notes: problems.notes,
+        hasCode: sql<boolean>`length(trim(${problems.code})) > 0`,
+      })
+      .from(problems)
+      .where(eq(problems.topicId, topicId))
+      .orderBy(asc(problems.sortOrder), asc(problems.id)),
+  ]);
+  const board: BoardProblem[] = rows.map(({ notes, ...r }) => ({ ...r, hasNotes: hasRealNotes(notes) }));
+  return { patterns: pats, problems: board };
+}
+
+export async function getPatternsForTopic(topicId: number) {
   return db
-    .select()
-    .from(problems)
-    .where(eq(problems.topicId, topicId))
-    .orderBy(asc(problems.sortOrder), asc(problems.id));
+    .select({ id: patterns.id, name: patterns.name })
+    .from(patterns)
+    .where(eq(patterns.topicId, topicId))
+    .orderBy(asc(patterns.sortOrder), asc(patterns.id));
 }
 
 export async function getProblem(id: number) {
   const [row] = await db
-    .select({ problem: problems, topic: { id: topics.id, name: topics.name, slug: topics.slug } })
+    .select({
+      problem: problems,
+      topic: { id: topics.id, name: topics.name, slug: topics.slug },
+      patternName: patterns.name,
+    })
     .from(problems)
     .innerJoin(topics, eq(problems.topicId, topics.id))
+    .leftJoin(patterns, eq(problems.patternId, patterns.id))
     .where(eq(problems.id, id))
     .limit(1);
   return row ?? null;
