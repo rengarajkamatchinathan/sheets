@@ -281,17 +281,81 @@ export default function CodeTabs({ tabs, onChange }: { tabs: Tab[]; onChange: (t
   );
 }
 
+const COMMON_COMPLEXITIES = ["1", "log n", "n", "n log n", "n²", "n³", "2ⁿ", "n!", "V + E", "m·n"];
+
+/** "O(n log n)" → "n log n"; also accepts bare "n" or "o(n)". */
+function innerOf(v: string) {
+  return v.replace(/^\s*[oO]\s*\(/, "").replace(/\)\s*$/, "");
+}
+
+/** Stored as "O(…)"; empty stays empty. */
+function wrap(inner: string) {
+  const clean = innerOf(inner);
+  return clean.trim() ? `O(${clean})` : "";
+}
+
+/**
+ * Complexity field shown as O( … ): you only type the inside. Focusing it offers
+ * common answers as chips (click to fill).
+ */
 function ComplexityInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const [focused, setFocused] = useState(false);
+  const inner = innerOf(value);
   return (
-    <label className="flex items-center gap-2 text-mute">
-      {label}
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="O(?)"
-        spellCheck={false}
-        className="h-7 w-32 rounded-md bg-transparent px-1.5 text-ink placeholder:text-[#4a5462] hover:bg-white/5 focus:bg-chip focus:ring-1 focus:ring-brand/40 focus:outline-none"
-      />
-    </label>
+    <div className="relative flex items-center gap-2">
+      <label className="flex cursor-text items-center gap-2 text-mute">
+        {label}
+        <span
+          className={cn(
+            "flex h-7 items-center rounded-md px-1.5 transition-colors",
+            focused ? "bg-chip ring-1 ring-brand/40" : "hover:bg-white/5",
+          )}
+        >
+          <span className={inner ? "text-soft" : "text-[#4a5462]"}>O(</span>
+          <input
+            value={inner}
+            onChange={(e) => onChange(wrap(e.target.value))}
+            onFocus={() => setFocused(true)}
+            onBlur={() => {
+              setFocused(false);
+              // Tidy spacing once editing is done: "n  log n " → "n log n".
+              const tidy = inner.replace(/\s+/g, " ").trim();
+              if (tidy !== inner) onChange(wrap(tidy));
+            }}
+            placeholder="?"
+            spellCheck={false}
+            aria-label={`${label} complexity`}
+            style={{ width: `${Math.max(inner.length, 1) + 0.5}ch` }}
+            className="min-w-[1.5ch] bg-transparent text-center text-ink placeholder:text-[#4a5462] focus:outline-none"
+          />
+          <span className={inner ? "text-soft" : "text-[#4a5462]"}>)</span>
+        </span>
+      </label>
+      {focused && (
+        <div
+          role="listbox"
+          aria-label={`Common ${label.toLowerCase()} complexities`}
+          className="absolute bottom-full left-0 z-20 mb-2 flex w-max max-w-[22rem] flex-wrap gap-1 rounded-lg border border-line2 bg-[#1c222b] p-1.5 shadow-2xl"
+        >
+          {COMMON_COMPLEXITIES.map((c) => (
+            <button
+              key={c}
+              type="button"
+              role="option"
+              aria-selected={inner.trim() === c}
+              // Keep focus in the input so the chip click doesn't blur it first.
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => onChange(wrap(c))}
+              className={cn(
+                "h-7 rounded-md px-2 font-mono text-[12px]",
+                inner.trim() === c ? "bg-brand/15 text-brand-soft" : "text-soft hover:bg-white/[0.06] hover:text-ink",
+              )}
+            >
+              O({c})
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

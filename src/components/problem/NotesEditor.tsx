@@ -35,7 +35,16 @@ export default function NotesEditor({ initial, onChange }: { initial: string; on
       }),
     ],
     content: initial,
-    editorProps: { attributes: { class: "tiptap", "aria-label": "Notes", spellcheck: "true" } },
+    editorProps: {
+      attributes: {
+        class: "tiptap",
+        "aria-label": "Notes",
+        // Notes are full of identifiers (minStack, dp[i]…); browser spell-check just adds noise.
+        spellcheck: "false",
+        autocorrect: "off",
+        autocapitalize: "off",
+      },
+    },
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
   });
 
