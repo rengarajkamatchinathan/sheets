@@ -150,6 +150,7 @@ export type BoardProblem = {
   tags: string[];
   hasNotes: boolean;
   hasCode: boolean;
+  hasDescription: boolean;
 };
 
 /** Everything the topic page's accordion needs, in display order. */
@@ -169,6 +170,7 @@ export async function getTopicBoard(topicId: number) {
         tags: problems.tags,
         notes: problems.notes,
         hasCode: sql<boolean>`exists (select 1 from ${snippets} where ${snippets.problemId} = ${problems.id} and length(trim(${snippets.code})) > 0)`,
+        hasDescription: sql<boolean>`length(trim(${problems.description})) > 0`,
       })
       .from(problems)
       .where(eq(problems.topicId, topicId))

@@ -18,27 +18,53 @@ import {
   Strikethrough,
   Underline,
 } from "lucide-react";
+import Superscript from "@tiptap/extension-superscript";
+import Subscript from "@tiptap/extension-subscript";
+import Image from "@tiptap/extension-image";
+import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 
-/** Notion-style notes: write in place, select text for a formatting bubble, markdown shortcuts work. */
-export default function NotesEditor({ initial, onChange }: { initial: string; onChange: (html: string) => void }) {
+const DEFAULT_PLACEHOLDER = "Write here… use # for a heading, - for a list, ``` for code";
+
+/**
+ * Notion-style rich text: write in place, select text for a formatting bubble,
+ * markdown shortcuts work. With `editable={false}` it's a clean read view.
+ */
+export default function NotesEditor({
+  initial,
+  onChange,
+  editable = true,
+  label = "Notes",
+  placeholder = DEFAULT_PLACEHOLDER,
+  className,
+}: {
+  initial: string;
+  onChange: (html: string) => void;
+  editable?: boolean;
+  label?: string;
+  placeholder?: string;
+  className?: string;
+}) {
   const editor = useEditor({
     immediatelyRender: false,
+    editable,
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
-        link: { openOnClick: false, autolink: true, defaultProtocol: "https" },
+        link: { openOnClick: !editable, autolink: true, defaultProtocol: "https" },
       }),
+      Superscript,
+      Subscript,
+      Image.configure({ inline: false }),
       Placeholder.configure({
-        placeholder: ({ node }) =>
-          node.type.name === "heading" ? "Heading" : "Write here… use # for a heading, - for a list, ``` for code",
+        placeholder: ({ node }) => (node.type.name === "heading" ? "Heading" : placeholder),
       }),
     ],
     content: initial,
     editorProps: {
       attributes: {
         class: "tiptap",
-        "aria-label": "Notes",
+        "aria-label": label,
         // Notes are full of identifiers (minStack, dp[i]…); browser spell-check just adds noise.
         spellcheck: "false",
         autocorrect: "off",
@@ -48,9 +74,14 @@ export default function NotesEditor({ initial, onChange }: { initial: string; on
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
   });
 
+  // Switch between read and edit without remounting (keeps scroll and history).
+  useEffect(() => {
+    if (editor && editor.isEditable !== editable) editor.setEditable(editable);
+  }, [editor, editable]);
+
   return (
-    <div className="notes-editor">
-      {editor && <FormatBubble editor={editor} />}
+    <div className={cn("notes-editor", !editable && "is-readonly", className)}>
+      {editor && editable && <FormatBubble editor={editor} />}
       <EditorContent editor={editor} />
       {!editor && <div className="min-h-80 animate-pulse rounded-lg bg-chip/40" />}
     </div>

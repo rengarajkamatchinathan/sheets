@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useOptimistic, useState, useTransition } from "react";
 import {
+  BookOpen,
   Check,
   ChevronRight,
   ChevronsDownUp,
@@ -461,6 +462,7 @@ function ProblemRow({
       <span className="flex flex-none items-center gap-1.5 text-[#5b6675]">
         {p.hasNotes && <FileText aria-label="Has notes" className="size-3.5" />}
         {p.hasCode && <Code2 aria-label="Has code" className="size-3.5" />}
+        {p.hasDescription && <BookOpen aria-label="Has description" className="size-3.5" />}
       </span>
 
       <span className={cn("w-12 flex-none text-right text-xs", DIFF_COLOR[p.difficulty])}>

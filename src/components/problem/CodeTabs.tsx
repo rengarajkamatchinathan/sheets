@@ -60,7 +60,16 @@ async function formatJava(code: string) {
 }
 
 /** Code snippets as tabs: + adds one, double-click renames, × closes. Java only. */
-export default function CodeTabs({ tabs, onChange }: { tabs: Tab[]; onChange: (tabs: Tab[]) => void }) {
+export default function CodeTabs({
+  tabs,
+  onChange,
+  extra,
+}: {
+  tabs: Tab[];
+  onChange: (tabs: Tab[]) => void;
+  /** Extra toolbar controls (e.g. the workspace's maximise button). */
+  extra?: React.ReactNode;
+}) {
   const [activeKey, setActiveKey] = useState<string | null>(tabs[0]?.key ?? null);
   const [renaming, setRenaming] = useState<{ key: string; name: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -185,8 +194,9 @@ export default function CodeTabs({ tabs, onChange }: { tabs: Tab[]; onChange: (t
             <TooltipContent>New snippet</TooltipContent>
           </Tooltip>
         </div>
-        {active && (
-          <div className="flex flex-none items-center gap-0.5 border-l border-line px-1.5">
+        <div className="flex flex-none items-center gap-0.5 border-l border-line px-1.5">
+          {active && (
+            <>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -220,8 +230,10 @@ export default function CodeTabs({ tabs, onChange }: { tabs: Tab[]; onChange: (t
               </TooltipTrigger>
               <TooltipContent>{copied ? "Copied" : "Copy code"}</TooltipContent>
             </Tooltip>
-          </div>
-        )}
+            </>
+          )}
+          {extra}
+        </div>
       </div>
 
       {fmt.error && (

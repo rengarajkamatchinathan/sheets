@@ -24,7 +24,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Sidebar />
             </Suspense>
             <main className="min-w-0 flex-1 px-5 py-6 md:px-10 md:py-8">
-              <div className="mx-auto max-w-7xl">{children}</div>
+              <div className="mx-auto w-full">{children}</div>
             </main>
           </div>
         </TooltipProvider>

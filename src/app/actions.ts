@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { patterns, problems, snippets, topics, type Difficulty, type Status } from "@/db/schema";
+import { cleanDescription, fetchLeetCodeDescription, type FetchResult } from "@/lib/leetcode";
 import { slugify } from "@/lib/slug";
 import { NOTES_TEMPLATE } from "@/lib/template";
 
@@ -154,6 +155,7 @@ export type ProblemUpdate = {
   starred: boolean;
   tags: string[];
   notes: string; // HTML from the rich-text editor
+  description: string; // HTML problem statement
   timeTakenMin: number | null;
 };
 
@@ -196,6 +198,8 @@ export async function updateProblem(id: number, data: ProblemUpdate, tabs: Snipp
       starred: data.starred,
       tags: [...new Set(data.tags.map((t) => t.trim()).filter(Boolean))],
       notes: data.notes,
+      // Re-sanitize: the editor output is trusted-ish, but this is also reachable by direct POST.
+      description: cleanDescription(data.description),
       timeTakenMin: data.timeTakenMin,
       solvedAt,
       updatedAt: now,
@@ -250,6 +254,24 @@ export async function setStatus(id: number, status: Status) {
  * No revalidation: it shouldn't refresh the page you're on; the dashboard is
  * rendered per request, so it picks this up on the next visit.
  */
+/**
+ * Fetches the statement from LeetCode for a problem with a LeetCode link and saves it.
+ * Without `force`, an existing description is kept (returns it unchanged).
+ */
+export async function fetchDescription(id: number, force = false): Promise<FetchResult> {
+  if (!Number.isInteger(id)) return { ok: false, reason: "not-found" };
+  const [p] = await db.select({ url: problems.url, description: problems.description }).from(problems).where(eq(problems.id, id));
+  if (!p) return { ok: false, reason: "not-found" };
+  if (!force && p.description.trim()) return { ok: true, html: p.description };
+
+  const res = await fetchLeetCodeDescription(p.url);
+  if (res.ok) {
+    await db.update(problems).set({ description: res.html, updatedAt: new Date() }).where(eq(problems.id, id));
+    refresh();
+  }
+  return res;
+}
+
 export async function markViewed(id: number) {
   if (!Number.isInteger(id)) return;
   await db.update(problems).set({ lastViewedAt: new Date() }).where(eq(problems.id, id));

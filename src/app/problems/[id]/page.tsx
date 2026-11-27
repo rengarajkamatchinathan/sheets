@@ -16,9 +16,10 @@ export default async function ProblemPage({ params }: PageProps<"/problems/[id]"
   const [patterns, snippets] = await Promise.all([getPatternsForTopic(topic.id), getSnippets(p.id)]);
 
   return (
-    <div className="flex flex-col gap-4">
+    // Desktop: cancel the layout's page padding and fill the viewport edge-to-edge, like LeetCode.
+    <div className="flex flex-col gap-2 lg:-mx-10 lg:-my-8 lg:h-dvh lg:px-3 lg:pt-2.5 lg:pb-3">
       <MarkViewed id={p.id} />
-      <nav aria-label="Breadcrumb" className="text-[13px] text-mute">
+      <nav aria-label="Breadcrumb" className="text-xs text-mute">
         <Link href="/topics" className="hover:text-ink">
           Topics
         </Link>
@@ -48,6 +49,7 @@ export default async function ProblemPage({ params }: PageProps<"/problems/[id]"
           starred: p.starred,
           tags: p.tags,
           notes: p.notes,
+          description: p.description,
           timeTakenMin: p.timeTakenMin,
         }}
       />

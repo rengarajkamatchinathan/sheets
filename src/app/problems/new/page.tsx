@@ -11,7 +11,7 @@ export default async function NewProblemPage({ searchParams }: PageProps<"/probl
   const preset = typeof sp.topic === "string" ? topics.find((t) => t.slug === sp.topic)?.id : undefined;
 
   return (
-    <div className="flex max-w-xl flex-col gap-6">
+    <div className="mx-auto flex max-w-xl flex-col gap-6">
       <nav aria-label="Breadcrumb" className="text-[13px] text-mute">
         <Link href="/" className="text-brand-soft hover:underline">
           Dashboard

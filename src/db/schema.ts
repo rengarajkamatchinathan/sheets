@@ -53,6 +53,8 @@ export const problems = pgTable(
     status: statusEnum("status").notNull().default("Todo"),
     tags: text("tags").array().notNull().default([]),
     notes: text("notes").notNull().default(""),
+    // Problem statement (sanitized HTML) — fetched from LeetCode or pasted.
+    description: text("description").notNull().default(""),
     timeTakenMin: integer("time_taken_min"),
     sortOrder: integer("sort_order").notNull().default(0),
     solvedAt: timestamp("solved_at", { withTimezone: true }),

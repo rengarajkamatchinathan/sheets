@@ -172,3 +172,21 @@
 @supports (-moz-appearance: none) {
   * { scrollbar-width: thin; scrollbar-color: #2a323d transparent; }
 }
+
+/* ── Description read view (LeetCode-like statement) ─────────────────── */
+.notes-editor.is-readonly .tiptap { min-height: 0; cursor: default; }
+.notes-editor.is-readonly .tiptap p.is-empty::before { content: none; }
+.notes-editor.desc-view .tiptap { font-size: 14.5px; line-height: 1.75; color: var(--color-soft); }
+.notes-editor.desc-view .tiptap pre {
+  background: #161b22;
+  border: 0;
+  border-left: 2px solid var(--color-line2);
+  border-radius: 6px;
+  padding: 10px 14px;
+  white-space: pre-wrap;
+}
+.notes-editor.desc-view .tiptap pre code { color: var(--color-soft); font-size: 13px; }
+.notes-editor.desc-view .tiptap pre strong { color: var(--color-ink); }
+.notes-editor.desc-view .tiptap code { color: var(--color-ink); background: #1f2630; }
+.notes-editor .tiptap img { max-width: 100%; height: auto; border-radius: 8px; margin: 0.5em 0; }
+.notes-editor .tiptap sup, .notes-editor .tiptap sub { font-size: 0.75em; }
