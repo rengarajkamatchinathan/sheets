@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
+import MarkViewed from "@/components/problem/MarkViewed";
 import ProblemView from "@/components/problem/ProblemView";
 import { getPatternsForTopic, getProblem, getSnippets } from "@/lib/queries";
 
@@ -16,6 +17,7 @@ export default async function ProblemPage({ params }: PageProps<"/problems/[id]"
 
   return (
     <div className="flex flex-col gap-4">
+      <MarkViewed id={p.id} />
       <nav aria-label="Breadcrumb" className="text-[13px] text-mute">
         <Link href="/topics" className="hover:text-ink">
           Topics

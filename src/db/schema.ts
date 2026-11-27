@@ -56,6 +56,8 @@ export const problems = pgTable(
     timeTakenMin: integer("time_taken_min"),
     sortOrder: integer("sort_order").notNull().default(0),
     solvedAt: timestamp("solved_at", { withTimezone: true }),
+    // Set each time the problem page is opened; drives the dashboard's "Recent" list.
+    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

@@ -245,6 +245,16 @@ export async function setStatus(id: number, status: Status) {
   refresh();
 }
 
+/**
+ * Records that the problem page was opened (for the dashboard's "Recent" list).
+ * No revalidation: it shouldn't refresh the page you're on; the dashboard is
+ * rendered per request, so it picks this up on the next visit.
+ */
+export async function markViewed(id: number) {
+  if (!Number.isInteger(id)) return;
+  await db.update(problems).set({ lastViewedAt: new Date() }).where(eq(problems.id, id));
+}
+
 export async function setStarred(id: number, starred: boolean) {
   if (!Number.isInteger(id)) return;
   await db.update(problems).set({ starred, updatedAt: new Date() }).where(eq(problems.id, id));

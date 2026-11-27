@@ -1,12 +1,24 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import { ArrowRight, Check, Plus, Sparkles, Star } from "lucide-react";
 import DifficultyGauge from "@/components/DifficultyGauge";
-import { Bar, Card, DIFF_HEX, btnPrimary } from "@/components/kit";
-import { addDays, dayKey, prettyDay, relativeDay, weekday } from "@/lib/dates";
-import { getDifficultyStats, getRecentSolved, getSolvedPerDay, getTopicStats } from "@/lib/queries";
+import { Card, Ring } from "@/components/kit";
+import { addDays, dayKey, prettyDay, timeAgo, weekday } from "@/lib/dates";
+import {
+  getDifficultyStats,
+  getInProgress,
+  getNextTodo,
+  getRecentViewed,
+  getSolvedPerDay,
+  getStarred,
+  getTopicStats,
+} from "@/lib/queries";
+import { cn } from "@/lib/utils";
 
 const WEEKS = 26;
 const SHADES = ["#1f2630", "#134e4a", "#0f766e", "#14b8a6", "#5eead4"];
+const DIFF_COLOR = { Easy: "text-easy", Medium: "text-medium", Hard: "text-hard" } as const;
+const DIFF_SHORT = { Easy: "Easy", Medium: "Med", Hard: "Hard" } as const;
 
 function shade(n: number) {
   if (n <= 0) return SHADES[0];
@@ -18,14 +30,17 @@ function shade(n: number) {
 
 export default async function Dashboard() {
   await connection();
-  const [topics, diffs, perDay, recent] = await Promise.all([
+  const [topics, diffs, perDay, recent, inProgress, nextTodo, starred] = await Promise.all([
     getTopicStats(),
     getDifficultyStats(),
     getSolvedPerDay(),
-    getRecentSolved(6),
+    getRecentViewed(6),
+    getInProgress(4),
+    getNextTodo(),
+    getStarred(5),
   ]);
 
-  // Heatmap: columns are weeks (Sun→Sat), ending with the current week.
+  // ── Activity heatmap: columns are weeks (Sun→Sat), ending with the current week.
   const today = dayKey();
   const start = addDays(today, -(WEEKS - 1) * 7 - weekday(today));
   const weeks: { key: string; n: number; future: boolean }[][] = [];
@@ -42,53 +57,61 @@ export default async function Dashboard() {
     }
     weeks.push(col);
   }
-  // Month labels above the first week column that starts in a new month.
   const months = weeks.map((col, i) => {
     const m = new Date(col[0].key + "T00:00:00Z").getUTCMonth();
     const prev = i > 0 ? new Date(weeks[i - 1][0].key + "T00:00:00Z").getUTCMonth() : -1;
     return m !== prev ? new Date(col[0].key + "T00:00:00Z").toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" }) : "";
   });
 
+  // ── Continue: something you started first, otherwise the next Todo in sheet order.
+  const next = inProgress[0] ?? nextTodo;
+  const moreInProgress = inProgress.slice(1);
+
+  // ── Topics: started-but-unfinished first, then untouched, then completed.
+  const rank = (t: (typeof topics)[number]) => (t.total > 0 && t.solved === t.total ? 2 : t.solved > 0 ? 0 : 1);
+  const topicList = [...topics].sort((a, b) => rank(a) - rank(b)).slice(0, 8);
+  const completedTopics = topics.filter((t) => t.total > 0 && t.solved === t.total).length;
+
   const dateLabel = new Date().toLocaleDateString("en-GB", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
     timeZone: process.env.APP_TIMEZONE || "Asia/Kolkata",
   });
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+    <div className="mx-auto flex max-w-6xl flex-col gap-5">
+      <header className="flex flex-wrap items-end gap-x-4 gap-y-2">
         <div>
-          <div className="font-mono text-[13px] text-mute">{dateLabel}</div>
-          <h1 className="mt-1.5 text-3xl font-bold tracking-tight">Dashboard</h1>
+          <div className="text-[13px] text-mute">{dateLabel}</div>
+          <h1 className="mt-0.5 text-2xl font-semibold tracking-tight">Dashboard</h1>
         </div>
-        <Link href="/problems/new" className={btnPrimary}>
-          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Log a problem
+        <Link
+          href="/problems/new"
+          className="ml-auto flex h-8 items-center gap-1.5 rounded-md px-2 text-[13px] text-mute hover:bg-white/5 hover:text-ink"
+        >
+          <Plus className="size-4" /> Log a problem
         </Link>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        <Card className="flex items-center px-6 py-5">
+      {/* Hero: difficulty gauge + activity */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        <Card className="flex items-center p-5">
           <div className="w-full">
             <DifficultyGauge stats={diffs} />
           </div>
         </Card>
 
-        <Card className="flex flex-col px-6 py-5">
+        <Card className="flex flex-col p-5">
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
-            <h2 className="text-base font-semibold">Activity · last {WEEKS} weeks</h2>
-            <div className="text-[13px] text-mute">
+            <h2 className="text-[13px] font-medium text-mute">Activity · last {WEEKS} weeks</h2>
+            <div className="text-xs text-mute">
               <b className="font-semibold text-soft">{heatTotal}</b> solved · <b className="font-semibold text-soft">{activeDays}</b> active days
             </div>
           </div>
           <div className="flex flex-1 items-center overflow-x-auto">
             <div className="w-max">
-              <div className="mb-1 flex gap-[3px] text-[11px] text-mute" aria-hidden="true">
+              <div className="mb-1 flex gap-[3px] text-[10px] text-mute" aria-hidden="true">
                 {months.map((m, i) => (
                   <span key={i} className="w-[13px] overflow-visible whitespace-nowrap">
                     {m}
@@ -111,65 +134,189 @@ export default async function Dashboard() {
               </div>
             </div>
           </div>
-          <div className="mt-3 flex items-center justify-end gap-1.5 text-xs text-mute">
+          <div className="mt-3 flex items-center justify-end gap-1.5 text-[11px] text-mute">
             Less
             {SHADES.map((s) => (
-              <span key={s} className="h-3 w-3 rounded-[3px]" style={{ background: s }} />
+              <span key={s} className="h-2.5 w-2.5 rounded-[3px]" style={{ background: s }} />
             ))}
             More
           </div>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        <Card className="px-6 py-5">
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-base font-semibold">Recently solved</h2>
-          </div>
-          {recent.length === 0 ? (
-            <p className="py-6 text-sm text-mute">Nothing solved yet. Open a topic, pick a problem and mark it Solved.</p>
-          ) : (
-            <ul>
-              {recent.map((p) => (
-                <li key={p.id} className="border-t border-line">
-                  <Link href={`/problems/${p.id}`} className="flex items-center gap-3 py-2.5 hover:text-brand-soft">
-                    <span className="h-2 w-2 flex-none rounded-full" style={{ background: DIFF_HEX[p.difficulty] }} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium">{p.title}</span>
-                      <span className="mt-0.5 block text-xs text-mute">
-                        {p.topicName} · {p.difficulty}
+      {/* Continue */}
+      {next ? (
+        <section aria-label="Continue" className="rounded-2xl bg-brand/[0.06] ring-1 ring-brand/15">
+          <Link href={`/problems/${next.id}`} className="group flex items-center gap-4 rounded-2xl p-4 transition-colors hover:bg-brand/[0.05]">
+            <span className="flex size-11 flex-none items-center justify-center rounded-xl bg-brand/15 text-brand-soft">
+              <Sparkles className="size-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs text-brand-soft">
+                {next.status === "Attempted" ? "Continue where you left off" : "Up next"}
+              </span>
+              <span className="mt-0.5 block truncate text-base font-medium text-ink">{next.title}</span>
+              <span className="block truncate text-xs text-mute">
+                {next.topicName}
+                {next.patternName ? ` · ${next.patternName}` : ""} · <span className={DIFF_COLOR[next.difficulty]}>{next.difficulty}</span>
+              </span>
+            </span>
+            <span className="hidden items-center gap-1.5 text-[13px] text-brand-soft sm:flex">
+              Open <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </Link>
+          {moreInProgress.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 border-t border-brand/10 px-4 py-3 text-xs">
+              <span className="text-mute">Also in progress</span>
+              {moreInProgress.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/problems/${p.id}`}
+                  className="inline-flex h-7 max-w-64 items-center gap-1.5 rounded-full bg-white/[0.04] px-2.5 text-soft hover:bg-white/[0.08] hover:text-ink"
+                >
+                  <span className="size-1.5 flex-none rounded-full bg-medium" />
+                  <span className="truncate">{p.title}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : (
+        <Card className="flex items-center gap-3 p-4 text-sm text-mute">
+          <Check className="size-4 text-easy" /> Every problem in the sheet is solved. Add new ones from any topic.
+        </Card>
+      )}
+
+      {/* Lists */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+        <Card className="p-5">
+          <SectionHead title="Topics" meta={`${completedTopics}/${topics.length} complete`} href="/topics" link="All topics" />
+          <ul className="flex flex-col">
+            {topicList.map((t) => {
+              const done = t.total > 0 && t.solved === t.total;
+              return (
+                <li key={t.id}>
+                  <Link
+                    href={`/topics/${t.slug}`}
+                    className="-mx-2 flex h-12 items-center gap-3 rounded-lg px-2 hover:bg-white/[0.03]"
+                  >
+                    <Ring value={t.solved} max={t.total} size={26} stroke={3}>
+                      {done && <Check className="size-3 text-easy" strokeWidth={3} />}
+                    </Ring>
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-sm text-ink">{t.name}</span>
+                      <span className="text-[11px] text-mute">
+                        {done ? "Complete" : t.total === 0 ? "Empty" : `${t.total - t.solved} to go`}
                       </span>
                     </span>
-                    <span className="flex-none font-mono text-xs text-mute">{relativeDay(p.solvedAt)}</span>
+                    <span className="font-mono text-xs text-mute">
+                      {t.solved}/{t.total}
+                    </span>
                   </Link>
                 </li>
-              ))}
-            </ul>
-          )}
+              );
+            })}
+          </ul>
         </Card>
 
-        <Card className="px-6 py-5">
-          <div className="mb-4 flex items-baseline justify-between">
-            <h2 className="text-base font-semibold">Progress by topic</h2>
-            <Link href="/topics" className="text-[13px] font-semibold text-brand-soft hover:underline">
-              All topics →
-            </Link>
-          </div>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-x-8 gap-y-3.5">
-            {topics.map((t) => (
-              <Link key={t.id} href={`/topics/${t.slug}`} className="block hover:text-brand-soft">
-                <div className="mb-1.5 flex justify-between text-[13px]">
-                  <span className="font-medium">{t.name}</span>
-                  <span className="font-mono text-mute">
-                    {t.solved}/{t.total}
-                  </span>
-                </div>
-                <Bar value={t.solved} max={t.total} />
-              </Link>
-            ))}
-          </div>
-        </Card>
+        <div className="flex flex-col gap-4">
+          <Card className="p-5">
+            <SectionHead title="Recent" />
+            {recent.length === 0 ? (
+              <Empty>Problems you open will show up here.</Empty>
+            ) : (
+              <ul>
+                {recent.map((p) => (
+                  <ProblemLine
+                    key={p.id}
+                    id={p.id}
+                    title={p.title}
+                    sub={p.patternName ? `${p.topicName} · ${p.patternName}` : p.topicName}
+                    right={timeAgo(p.lastViewedAt)}
+                    difficulty={p.difficulty}
+                    icon={<StatusIcon status={p.status} />}
+                  />
+                ))}
+              </ul>
+            )}
+          </Card>
+
+          <Card className="p-5">
+            <SectionHead title="Starred" />
+            {starred.length === 0 ? (
+              <Empty>Star problems you want to revisit — they’ll show up here.</Empty>
+            ) : (
+              <ul>
+                {starred.map((p) => (
+                  <ProblemLine
+                    key={p.id}
+                    id={p.id}
+                    title={p.title}
+                    sub={p.topicName}
+                    difficulty={p.difficulty}
+                    icon={<Star className="size-3.5 text-medium" fill="currentColor" />}
+                  />
+                ))}
+              </ul>
+            )}
+          </Card>
+        </div>
       </div>
     </div>
   );
+}
+
+function SectionHead({ title, meta, href, link }: { title: string; meta?: string; href?: string; link?: string }) {
+  return (
+    <div className="mb-3 flex items-baseline gap-3">
+      <h2 className="text-[13px] font-medium text-mute">{title}</h2>
+      {meta && <span className="text-xs text-[#5b6675]">{meta}</span>}
+      {href && (
+        <Link href={href} className="ml-auto text-xs text-mute hover:text-ink">
+          {link} →
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function ProblemLine({
+  id,
+  title,
+  sub,
+  right,
+  difficulty,
+  icon,
+}: {
+  id: number;
+  title: string;
+  sub: string;
+  right?: string;
+  difficulty: "Easy" | "Medium" | "Hard";
+  icon: React.ReactNode;
+}) {
+  return (
+    <li>
+      <Link href={`/problems/${id}`} className="-mx-2 flex h-11 items-center gap-3 rounded-lg px-2 hover:bg-white/[0.03]">
+        <span className="flex size-4 flex-none items-center justify-center">{icon}</span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-sm text-soft">{title}</span>
+          <span className="truncate text-[11px] text-mute">{sub}</span>
+        </span>
+        <span className={cn("text-xs", DIFF_COLOR[difficulty])}>{DIFF_SHORT[difficulty]}</span>
+        {right && <span className="w-16 text-right font-mono text-[11px] text-mute">{right}</span>}
+      </Link>
+    </li>
+  );
+}
+
+/** Solved ✓, attempted (amber dot), todo (hollow ring). */
+function StatusIcon({ status }: { status: "Todo" | "Attempted" | "Solved" }) {
+  if (status === "Solved") return <Check aria-label="Solved" className="size-3.5 text-easy" strokeWidth={3} />;
+  if (status === "Attempted") return <span aria-label="Attempted" className="size-2 rounded-full bg-medium" />;
+  return <span aria-label="Todo" className="size-2.5 rounded-full border border-[#4a5462]" />;
+}
+
+function Empty({ children }: { children: React.ReactNode }) {
+  return <p className="py-3 text-[13px] text-[#5b6675]">{children}</p>;
 }

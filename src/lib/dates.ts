@@ -21,6 +21,16 @@ export function prettyDay(key: string) {
   return new Date(key + "T00:00:00Z").toLocaleDateString("en-GB", { day: "2-digit", month: "short", timeZone: "UTC" });
 }
 
+/** "just now", "5m ago", "3h ago", "yesterday", "4d ago", then a date. */
+export function timeAgo(d: Date | null, now: Date = new Date()) {
+  if (!d) return "—";
+  const mins = Math.floor((now.getTime() - d.getTime()) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  if (dayKey(d) === dayKey(now)) return `${Math.floor(mins / 60)}h ago`;
+  return relativeDay(d);
+}
+
 export function relativeDay(d: Date | null) {
   if (!d) return "—";
   const today = dayKey();

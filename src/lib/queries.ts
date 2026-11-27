@@ -69,19 +69,67 @@ export async function getSolvedPerDay(): Promise<Map<string, number>> {
   return new Map(rows.map((r) => [r.day, r.count]));
 }
 
-export async function getRecentSolved(limit = 6) {
+const problemCard = {
+  id: problems.id,
+  title: problems.title,
+  difficulty: problems.difficulty,
+  status: problems.status,
+  topicName: topics.name,
+  topicSlug: topics.slug,
+  patternName: patterns.name,
+};
+
+/** Problems you've started but not finished, most recently touched first. */
+export async function getInProgress(limit = 4) {
   return db
-    .select({
-      id: problems.id,
-      title: problems.title,
-      difficulty: problems.difficulty,
-      solvedAt: problems.solvedAt,
-      topicName: topics.name,
-    })
+    .select(problemCard)
     .from(problems)
     .innerJoin(topics, eq(problems.topicId, topics.id))
-    .where(isNotNull(problems.solvedAt))
-    .orderBy(desc(problems.solvedAt))
+    .leftJoin(patterns, eq(problems.patternId, patterns.id))
+    .where(eq(problems.status, "Attempted"))
+    .orderBy(desc(problems.updatedAt))
+    .limit(limit);
+}
+
+/** The next Todo in sheet order: topic → pattern (Unsorted last) → problem. */
+export async function getNextTodo() {
+  const [row] = await db
+    .select(problemCard)
+    .from(problems)
+    .innerJoin(topics, eq(problems.topicId, topics.id))
+    .leftJoin(patterns, eq(problems.patternId, patterns.id))
+    .where(eq(problems.status, "Todo"))
+    .orderBy(
+      asc(topics.sortOrder),
+      asc(topics.id),
+      sql`${patterns.sortOrder} asc nulls last`,
+      asc(problems.sortOrder),
+      asc(problems.id),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
+export async function getStarred(limit = 6) {
+  return db
+    .select(problemCard)
+    .from(problems)
+    .innerJoin(topics, eq(problems.topicId, topics.id))
+    .leftJoin(patterns, eq(problems.patternId, patterns.id))
+    .where(eq(problems.starred, true))
+    .orderBy(desc(problems.updatedAt))
+    .limit(limit);
+}
+
+/** Problems you opened most recently. */
+export async function getRecentViewed(limit = 6) {
+  return db
+    .select({ ...problemCard, lastViewedAt: problems.lastViewedAt })
+    .from(problems)
+    .innerJoin(topics, eq(problems.topicId, topics.id))
+    .leftJoin(patterns, eq(problems.patternId, patterns.id))
+    .where(isNotNull(problems.lastViewedAt))
+    .orderBy(desc(problems.lastViewedAt))
     .limit(limit);
 }
 
