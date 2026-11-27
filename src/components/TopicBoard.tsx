@@ -49,6 +49,9 @@ function apply(items: BoardProblem[], op: Op): BoardProblem[] {
   }
 }
 
+/** Shared column layout for the header and pattern rows (matches the Topics list view). */
+const COLS = "md:grid-cols-[2.75rem_minmax(0,1fr)_5rem_8.5rem_minmax(8rem,13rem)_3.5rem_2.5rem]";
+
 const STATUS_FILTERS = ["All", "Todo", "Attempted", "Solved"] as const;
 const DIFF_FILTERS = ["All", "Easy", "Medium", "Hard"] as const;
 
@@ -63,7 +66,7 @@ export default function TopicBoard({
 }) {
   const [items, addOp] = useOptimistic(problems, apply);
   const [pending, start] = useTransition();
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [open, setOpen] = useState<Set<string>>(new Set()); // expanded patterns; all start collapsed
   const [statusF, setStatusF] = useState<(typeof STATUS_FILTERS)[number]>("All");
   const [diffF, setDiffF] = useState<(typeof DIFF_FILTERS)[number]>("All");
   const [starredOnly, setStarredOnly] = useState(false);
@@ -89,7 +92,7 @@ export default function TopicBoard({
     (statusF === "All" || p.status === statusF) && (diffF === "All" || p.difficulty === diffF) && (!starredOnly || p.starred);
 
   const toggleGroup = (key: string) =>
-    setCollapsed((s) => {
+    setOpen((s) => {
       const n = new Set(s);
       if (n.has(key)) n.delete(key);
       else n.add(key);
@@ -148,12 +151,16 @@ export default function TopicBoard({
         </div>
         <div className="flex items-center gap-2 text-[13px]">
           {pending && <span className="text-mute">Saving…</span>}
-          <button type="button" onClick={() => setCollapsed(new Set())} className="min-h-9 rounded-md px-2.5 text-mute hover:bg-chip hover:text-ink">
+          <button
+            type="button"
+            onClick={() => setOpen(new Set(groups.map((g) => g.key)))}
+            className="min-h-9 rounded-md px-2.5 text-mute hover:bg-chip hover:text-ink"
+          >
             Expand all
           </button>
           <button
             type="button"
-            onClick={() => setCollapsed(new Set(groups.map((g) => g.key)))}
+            onClick={() => setOpen(new Set())}
             className="min-h-9 rounded-md px-2.5 text-mute hover:bg-chip hover:text-ink"
           >
             Collapse all
@@ -161,20 +168,36 @@ export default function TopicBoard({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="rounded-2xl border border-line bg-panel">
+        <div
+          aria-hidden="true"
+          className={`hidden gap-4 border-b border-line px-5 py-2.5 text-[11px] font-semibold tracking-wide text-mute uppercase md:grid ${COLS}`}
+        >
+          <span>#</span>
+          <span>Pattern</span>
+          <span>Problems</span>
+          <span>Difficulty</span>
+          <span>Progress</span>
+          <span className="text-right">Solved</span>
+          <span />
+        </div>
         {groups.map((g, gi) => {
           const all = items.filter((p) => p.patternId === g.id);
           if (g.id == null && all.length === 0 && dragId == null) return null;
           const rows = all.filter(visible);
           const solved = all.filter((p) => p.status === "Solved").length;
-          const isOpen = !collapsed.has(g.key);
+          // While filtering, patterns with matches open automatically.
+          const isOpen = open.has(g.key) || (filtering && rows.length > 0);
           const done = all.length > 0 && solved === all.length;
           const dropHere = drop?.key === g.key;
+          const pct = all.length ? Math.round((solved / all.length) * 100) : 0;
+          const count = (d: string) => all.filter((p) => p.difficulty === d).length;
 
           return (
             <section
               key={g.key}
-              className={`rounded-2xl border bg-panel transition-colors ${dropHere && dragId != null ? "border-brand/60" : "border-line"}`}
+              aria-label={g.name}
+              className={`border-t border-line first-of-type:border-t-0 transition-colors last:rounded-b-2xl ${dropHere && dragId != null ? "bg-brand/[0.04]" : ""}`}
               onDragOver={(e) => {
                 if (dragId == null) return;
                 e.preventDefault();
@@ -188,10 +211,22 @@ export default function TopicBoard({
                 endDrag();
               }}
             >
-              <header className="flex items-center gap-3 px-4 py-2 sm:px-5">
+              <header
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest("button, a, input, form, [data-menu]")) return;
+                  toggleGroup(g.key);
+                }}
+                className={`grid cursor-pointer grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-4 gap-y-1.5 py-2 pr-3 pl-5 hover:bg-[#1a2029] ${COLS} ${
+                  isOpen ? "bg-[#181d24]" : ""
+                }`}
+              >
+                <span className="hidden items-center gap-1.5 font-mono text-xs text-mute md:flex">
+                  <Chevron open={isOpen} />
+                  {g.id == null ? "—" : String(gi + 1).padStart(2, "0")}
+                </span>
                 {renaming?.id === g.id && g.id != null ? (
                   <form
-                    className="flex flex-1 items-center gap-2"
+                    className="flex min-w-0 items-center gap-2"
                     onSubmit={(e) => {
                       e.preventDefault();
                       const { id, name } = renaming;
@@ -217,21 +252,28 @@ export default function TopicBoard({
                     type="button"
                     aria-expanded={isOpen}
                     onClick={() => toggleGroup(g.key)}
-                    className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left"
+                    className="flex min-h-10 min-w-0 items-center gap-2 text-left"
                   >
-                    <Chevron open={isOpen} />
-                    <span className={`truncate text-[15px] font-semibold ${g.id == null ? "text-mute italic" : ""}`}>{g.name}</span>
-                    {done && (
-                      <svg aria-label="All solved" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 6 9 17l-5-5" />
-                      </svg>
-                    )}
+                    <span className="md:hidden">
+                      <Chevron open={isOpen} />
+                    </span>
+                    <span className={`truncate text-[15px] font-medium ${g.id == null ? "text-mute italic" : ""}`}>{g.name}</span>
+                    {done && <span className="flex-none rounded-full bg-[#12291a] px-2 py-0.5 text-[11px] font-semibold text-easy">Done</span>}
                   </button>
                 )}
-                <div className="hidden w-40 sm:block">
-                  <Bar value={solved} max={all.length} />
-                </div>
-                <span className="w-12 text-right font-mono text-[13px] text-mute">
+                <span className="hidden text-[13px] text-mute md:block">{all.length}</span>
+                <span className="hidden gap-2.5 font-mono text-xs md:flex">
+                  <span className="text-easy">E {count("Easy")}</span>
+                  <span className="text-medium">M {count("Medium")}</span>
+                  <span className="text-hard">H {count("Hard")}</span>
+                </span>
+                <span className="col-span-3 row-start-2 flex items-center gap-3 md:col-span-1 md:row-start-auto">
+                  <span className="flex-1">
+                    <Bar value={solved} max={all.length} />
+                  </span>
+                  <span className="w-9 text-right font-mono text-xs text-mute">{pct}%</span>
+                </span>
+                <span className="text-right font-mono text-[13px] text-soft">
                   {solved}/{all.length}
                 </span>
                 {g.id != null ? (
@@ -263,15 +305,15 @@ export default function TopicBoard({
                     )}
                   </div>
                 ) : (
-                  <span className="w-11" />
+                  <span className="w-10" />
                 )}
               </header>
 
               {isOpen && (
-                <div className="px-2 pb-2 sm:px-3 sm:pb-3">
-                  <ul className="overflow-hidden rounded-xl bg-[#1a1f27]">
+                <div className="border-t border-line/60 bg-[#12161c] pb-1 md:pl-12">
+                  <ul>
                     {rows.length === 0 && (
-                      <li className="px-4 py-4 text-[13px] text-mute">
+                      <li className="px-5 py-3.5 text-[13px] text-mute">
                         {dragId != null ? "Drop here" : filtering && all.length ? "No problems match the filters." : "No problems yet — drag one here or use ⋮ → Move to."}
                       </li>
                     )}
@@ -296,7 +338,7 @@ export default function TopicBoard({
                             const before = e.clientY < r.top + r.height / 2 ? p.id : nextId;
                             if (drop?.key !== g.key || drop.beforeId !== before) setDrop({ key: g.key, beforeId: before });
                           }}
-                          className={`group relative border-t border-line first:border-t-0 ${dragId === p.id ? "opacity-40" : ""}`}
+                          className={`group relative border-t border-line/50 first:border-t-0 ${dragId === p.id ? "opacity-40" : ""}`}
                         >
                           {showLine && <span className="absolute inset-x-2 -top-px z-10 h-0.5 rounded bg-brand" />}
                           <ProblemRow
