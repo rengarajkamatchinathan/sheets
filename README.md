@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DSA Log
 
-## Getting Started
+Track daily DSA practice: topics → problems → markdown notes + solution code, with a progress dashboard (Easy/Medium/Hard gauge, activity heatmap, per-topic progress).
 
-First, run the development server:
+Stack: Next.js 16 (App Router, Server Actions) · Tailwind v4 · Drizzle ORM · Neon Postgres.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Setup
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Create `.env.local` (git-ignored):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+   ```
+   DATABASE_URL="postgresql://…"
+   APP_TIMEZONE="Asia/Kolkata"   # day boundaries for the activity heatmap
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. Install, create tables, seed the NeetCode 150 sheet (seed skips if topics already exist):
 
-## Learn More
+   ```
+   npm install
+   npm run db:push
+   npm run db:seed
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+3. `npm run dev` → http://localhost:3000
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## How progress is counted
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+A problem counts toward the activity heatmap on the day its status first becomes **Solved** (`solved_at`). Setting it back to Todo/Attempted clears that date.
 
-## Deploy on Vercel
+## Layout
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/db/schema.ts` — `topics`, `problems` tables
+- `src/db/seed.ts` — NeetCode 150 seed
+- `src/lib/queries.ts` — dashboard/topic queries
+- `src/app/actions.ts` — server actions (create/update/delete)
+- `src/app/page.tsx` — dashboard
+- `src/app/topics/` — topic grid and topic detail table
+- `src/app/problems/` — problem notes/code editor, new problem form
