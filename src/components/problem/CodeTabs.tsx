@@ -115,7 +115,7 @@ export default function CodeTabs({ tabs, onChange }: { tabs: Tab[]; onChange: (t
     <div className="flex h-full flex-col overflow-hidden rounded-xl border border-line bg-[#0f1318]">
       {/* Tabs */}
       <div className="flex items-stretch border-b border-line bg-panel">
-        <div ref={stripRef} role="tablist" aria-label="Code snippets" className="flex min-w-0 flex-1 overflow-x-auto [scrollbar-width:thin]">
+        <div ref={stripRef} role="tablist" aria-label="Code snippets" className="flex min-w-0 flex-1 overflow-x-auto [&::-webkit-scrollbar]:h-1.5">
           {tabs.map((t) => {
             const on = t.key === active?.key;
             return (
