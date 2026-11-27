@@ -155,7 +155,14 @@ export async function getProblem(id: number) {
 
 export async function getSnippets(problemId: number) {
   return db
-    .select({ id: snippets.id, name: snippets.name, language: snippets.language, code: snippets.code })
+    .select({
+      id: snippets.id,
+      name: snippets.name,
+      language: snippets.language,
+      code: snippets.code,
+      timeComplexity: snippets.timeComplexity,
+      spaceComplexity: snippets.spaceComplexity,
+    })
     .from(snippets)
     .where(eq(snippets.problemId, problemId))
     .orderBy(asc(snippets.sortOrder), asc(snippets.id));

@@ -35,8 +35,7 @@ export default async function ProblemPage({ params }: PageProps<"/problems/[id]"
         id={p.id}
         topicSlug={topic.slug}
         patterns={patterns}
-        initialSolvedAt={p.solvedAt?.toISOString() ?? null}
-        initialTabs={snippets.map((s) => ({ key: `s${s.id}`, id: s.id, name: s.name, language: s.language, code: s.code }))}
+        initialTabs={snippets.map((s) => ({ ...s, key: `s${s.id}` }))}
         initial={{
           title: p.title,
           url: p.url,
@@ -47,8 +46,6 @@ export default async function ProblemPage({ params }: PageProps<"/problems/[id]"
           starred: p.starred,
           tags: p.tags,
           notes: p.notes,
-          timeComplexity: p.timeComplexity,
-          spaceComplexity: p.spaceComplexity,
           timeTakenMin: p.timeTakenMin,
         }}
       />

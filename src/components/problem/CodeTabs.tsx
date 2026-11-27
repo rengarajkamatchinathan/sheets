@@ -2,76 +2,95 @@
 
 import dynamic from "next/dynamic";
 import { useMemo, useRef, useState } from "react";
-import type { Extension } from "@codemirror/state";
-import { cpp } from "@codemirror/lang-cpp";
-import { go } from "@codemirror/lang-go";
 import { java } from "@codemirror/lang-java";
-import { javascript } from "@codemirror/lang-javascript";
-import { python } from "@codemirror/lang-python";
-import { vscodeDark } from "@uiw/codemirror-theme-vscode";
-import { Check, ChevronDown, Copy, FileCode2, Plus, X } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { AlertCircle, Check, Copy, Plus, WandSparkles, X } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { dsaTheme } from "./codeTheme";
 
 const CodeMirror = dynamic(() => import("@uiw/react-codemirror"), {
   ssr: false,
-  loading: () => <div className="h-full bg-[#1e1e1e]" />,
+  loading: () => <div className="h-full bg-[#0f1318]" />,
 });
 
-export type Tab = { key: string; id: number | null; name: string; language: string; code: string };
-
-export const LANGS: { id: string; label: string; ext: string; color: string; ext_: () => Extension[] }[] = [
-  { id: "python", label: "Python", ext: "py", color: "#4b8bbe", ext_: () => [python()] },
-  { id: "java", label: "Java", ext: "java", color: "#f89820", ext_: () => [java()] },
-  { id: "cpp", label: "C++", ext: "cpp", color: "#659ad2", ext_: () => [cpp()] },
-  { id: "javascript", label: "JavaScript", ext: "js", color: "#f7df1e", ext_: () => [javascript()] },
-  { id: "typescript", label: "TypeScript", ext: "ts", color: "#3178c6", ext_: () => [javascript({ typescript: true })] },
-  { id: "go", label: "Go", ext: "go", color: "#00add8", ext_: () => [go()] },
-  { id: "plaintext", label: "Plain text", ext: "txt", color: "#9ba7b4", ext_: () => [] },
-];
-
-const langOf = (id: string) => LANGS.find((l) => l.id === id) ?? LANGS[LANGS.length - 1];
-const langByExt = (name: string) => {
-  const ext = name.split(".").pop()?.toLowerCase();
-  return LANGS.find((l) => l.ext === ext || (ext === "cc" && l.id === "cpp") || (ext === "jsx" && l.id === "javascript"));
+export type Tab = {
+  key: string;
+  id: number | null;
+  name: string;
+  language: string; // always "java"
+  code: string;
+  timeComplexity: string;
+  spaceComplexity: string;
 };
 
 export function newKey() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-function nextName(tabs: Tab[], language: string) {
-  const ext = langOf(language).ext;
-  const base = language === "java" ? "Solution" : "solution";
+function nextName(tabs: Tab[]) {
   const taken = new Set(tabs.map((t) => t.name.toLowerCase()));
-  if (!taken.has(`${base}.${ext}`.toLowerCase())) return `${base}.${ext}`;
-  for (let i = 2; ; i++) if (!taken.has(`${base}${i}.${ext}`.toLowerCase())) return `${base}${i}.${ext}`;
+  for (let i = tabs.length + 1; ; i++) if (!taken.has(`approach ${i}`)) return `Approach ${i}`;
 }
 
-/** VS Code-style tabs of code snippets: + adds a file, double-click renames, × closes. */
+/**
+ * Formats Java with Prettier (loaded on demand). Snippets that aren't a full
+ * compilation unit (e.g. a few statements) are wrapped in a class + method first.
+ */
+async function formatJava(code: string) {
+  const [prettier, plugin] = await Promise.all([import("prettier/standalone"), import("prettier-plugin-java")]);
+  const opts = { parser: "java", plugins: [plugin.default ?? plugin], tabWidth: 4, printWidth: 100 };
+  try {
+    return await prettier.format(code, opts);
+  } catch (first) {
+    try {
+      const wrapped = await prettier.format(`class __W__ {\nvoid __m__() {\n${code}\n}\n}`, opts);
+      const lines = wrapped.trimEnd().split("\n");
+      const start = lines.findIndex((l) => l.includes("__m__")) + 1;
+      return (
+        lines
+          .slice(start, lines.length - 2)
+          .map((l) => l.replace(/^ {8}/, ""))
+          .join("\n")
+          .trim() + "\n"
+      );
+    } catch {
+      throw first;
+    }
+  }
+}
+
+/** Code snippets as tabs: + adds one, double-click renames, × closes. Java only. */
 export default function CodeTabs({ tabs, onChange }: { tabs: Tab[]; onChange: (tabs: Tab[]) => void }) {
   const [activeKey, setActiveKey] = useState<string | null>(tabs[0]?.key ?? null);
   const [renaming, setRenaming] = useState<{ key: string; name: string } | null>(null);
-  const [cursor, setCursor] = useState({ line: 1, col: 1 });
   const [copied, setCopied] = useState(false);
+  const [fmt, setFmt] = useState<{ busy: boolean; error: string | null }>({ busy: false, error: null });
   const stripRef = useRef<HTMLDivElement>(null);
 
   const active = tabs.find((t) => t.key === activeKey) ?? tabs[0] ?? null;
-  const lang = active ? langOf(active.language) : null;
-  const extensions = useMemo(() => (lang ? lang.ext_() : []), [lang]);
-
   const update = (key: string, patch: Partial<Tab>) => onChange(tabs.map((t) => (t.key === key ? { ...t, ...patch } : t)));
 
+  const format = async () => {
+    if (!active || !active.code.trim() || fmt.busy) return;
+    setFmt({ busy: true, error: null });
+    try {
+      const out = await formatJava(active.code);
+      update(active.key, { code: out });
+      setFmt({ busy: false, error: null });
+    } catch (e) {
+      // Parser errors are long tree dumps; show something readable instead.
+      const raw = e instanceof Error ? e.message : "";
+      const msg = /parse|syntax|expect/i.test(raw) ? "the code has a syntax error" : raw.split("\n")[0].slice(0, 120) || "unknown error";
+      setFmt({ busy: false, error: msg });
+      setTimeout(() => setFmt((s) => (s.error === msg ? { ...s, error: null } : s)), 4000);
+    }
+  };
+
+
+  const extensions = useMemo(() => [java()], []);
+
   const add = () => {
-    const language = active?.language ?? "python";
-    const t: Tab = { key: newKey(), id: null, name: nextName(tabs, language), language, code: "" };
+    const t: Tab = { key: newKey(), id: null, name: nextName(tabs), language: "java", code: "", timeComplexity: "", spaceComplexity: "" };
     onChange([...tabs, t]);
     setActiveKey(t.key);
     requestAnimationFrame(() => stripRef.current?.scrollTo({ left: stripRef.current.scrollWidth, behavior: "smooth" }));
@@ -88,30 +107,17 @@ export default function CodeTabs({ tabs, onChange }: { tabs: Tab[]; onChange: (t
   const commitRename = () => {
     if (!renaming) return;
     const name = renaming.name.trim();
-    if (name) {
-      const byExt = langByExt(name);
-      update(renaming.key, { name, ...(byExt ? { language: byExt.id } : {}) });
-    }
+    if (name) update(renaming.key, { name });
     setRenaming(null);
   };
 
-  const setLanguage = (id: string) => {
-    if (!active) return;
-    const old = langOf(active.language).ext;
-    const next = langOf(id).ext;
-    // Keep the file name in step with the language when it still has the old extension.
-    const name = active.name.endsWith(`.${old}`) ? active.name.slice(0, -old.length) + next : active.name;
-    update(active.key, { language: id, name });
-  };
-
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-[#2b2b2b] bg-[#1e1e1e]">
-      {/* Tab strip */}
-      <div className="flex items-stretch bg-[#252526]">
-        <div ref={stripRef} role="tablist" aria-label="Code files" className="flex min-w-0 flex-1 overflow-x-auto [scrollbar-width:thin]">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-line bg-[#0f1318]">
+      {/* Tabs */}
+      <div className="flex items-stretch border-b border-line bg-panel">
+        <div ref={stripRef} role="tablist" aria-label="Code snippets" className="flex min-w-0 flex-1 overflow-x-auto [scrollbar-width:thin]">
           {tabs.map((t) => {
             const on = t.key === active?.key;
-            const l = langOf(t.language);
             return (
               <div
                 key={t.key}
@@ -120,22 +126,20 @@ export default function CodeTabs({ tabs, onChange }: { tabs: Tab[]; onChange: (t
                 tabIndex={on ? 0 : -1}
                 onClick={() => setActiveKey(t.key)}
                 onDoubleClick={() => setRenaming({ key: t.key, name: t.name })}
-                onKeyDown={(e) => {
-                  if (e.key === "F2") setRenaming({ key: t.key, name: t.name });
-                }}
+                onKeyDown={(e) => e.key === "F2" && setRenaming({ key: t.key, name: t.name })}
                 onAuxClick={(e) => e.button === 1 && close(t)}
                 title="Double-click to rename"
                 className={cn(
-                  "group relative flex h-10 flex-none cursor-pointer items-center gap-2 border-r border-[#1e1e1e] pr-1.5 pl-3 text-[13px] select-none",
-                  on ? "bg-[#1e1e1e] text-white" : "bg-[#2d2d2d] text-[#969696] hover:text-[#cccccc]",
+                  "group relative flex h-10 flex-none cursor-pointer items-center gap-1.5 pr-1.5 pl-3.5 text-[13px] select-none",
+                  on ? "bg-[#0f1318] text-ink" : "text-mute hover:bg-white/[0.03] hover:text-soft",
                 )}
               >
-                {on && <span className="absolute inset-x-0 top-0 h-px bg-brand" />}
-                <FileCode2 aria-hidden="true" className="size-3.5 flex-none" style={{ color: l.color }} />
+                {on && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-brand" />}
                 {renaming?.key === t.key ? (
                   <input
                     autoFocus
-                    aria-label="File name"
+                    aria-label="Snippet title"
+                    maxLength={60}
                     value={renaming.name}
                     onChange={(e) => setRenaming({ key: t.key, name: e.target.value })}
                     onBlur={commitRename}
@@ -145,10 +149,10 @@ export default function CodeTabs({ tabs, onChange }: { tabs: Tab[]; onChange: (t
                       e.stopPropagation();
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    className="w-32 rounded-sm bg-[#3c3c3c] px-1 font-mono text-[12px] text-white outline outline-1 outline-brand"
+                    className="w-36 rounded-sm bg-chip px-1.5 py-0.5 text-[13px] text-ink outline outline-1 outline-brand/60"
                   />
                 ) : (
-                  <span className="font-mono text-[12.5px] whitespace-nowrap">{t.name}</span>
+                  <span className="whitespace-nowrap">{t.name}</span>
                 )}
                 <button
                   type="button"
@@ -158,7 +162,7 @@ export default function CodeTabs({ tabs, onChange }: { tabs: Tab[]; onChange: (t
                     close(t);
                   }}
                   className={cn(
-                    "flex size-6 items-center justify-center rounded-sm hover:bg-white/10",
+                    "flex size-6 items-center justify-center rounded-md text-mute hover:bg-white/10 hover:text-ink",
                     on ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus:opacity-100",
                   )}
                 >
@@ -167,17 +171,37 @@ export default function CodeTabs({ tabs, onChange }: { tabs: Tab[]; onChange: (t
               </div>
             );
           })}
-        </div>
-        <div className="flex flex-none items-center gap-0.5 px-1.5">
           <Tooltip>
             <TooltipTrigger asChild>
-              <button type="button" aria-label="New file" onClick={add} className="flex size-8 items-center justify-center rounded-md text-[#c5c5c5] hover:bg-white/10">
+              <button
+                type="button"
+                aria-label="New snippet"
+                onClick={add}
+                className="flex h-10 w-10 flex-none items-center justify-center text-mute hover:bg-white/[0.03] hover:text-ink"
+              >
                 <Plus className="size-4" />
               </button>
             </TooltipTrigger>
-            <TooltipContent>New file</TooltipContent>
+            <TooltipContent>New snippet</TooltipContent>
           </Tooltip>
-          {active && (
+        </div>
+        {active && (
+          <div className="flex flex-none items-center gap-0.5 border-l border-line px-1.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Format code"
+                  disabled={fmt.busy || !active.code.trim()}
+                  onClick={format}
+                  className="flex h-8 items-center gap-1.5 rounded-md px-2 text-[12.5px] text-mute hover:bg-white/5 hover:text-ink disabled:opacity-40"
+                >
+                  <WandSparkles className={cn("size-3.5", fmt.busy && "animate-pulse")} />
+                  Format
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Format code (Shift+Alt+F)</TooltipContent>
+            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -189,78 +213,85 @@ export default function CodeTabs({ tabs, onChange }: { tabs: Tab[]; onChange: (t
                       setTimeout(() => setCopied(false), 1200);
                     })
                   }
-                  className="flex size-8 items-center justify-center rounded-md text-[#c5c5c5] hover:bg-white/10"
+                  className="flex size-8 items-center justify-center rounded-md text-mute hover:bg-white/5 hover:text-ink"
                 >
-                  {copied ? <Check className="size-4 text-easy" /> : <Copy className="size-4" />}
+                  {copied ? <Check className="size-4 text-easy" /> : <Copy className="size-3.5" />}
                 </button>
               </TooltipTrigger>
               <TooltipContent>{copied ? "Copied" : "Copy code"}</TooltipContent>
             </Tooltip>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
+      {fmt.error && (
+        <div role="alert" className="flex items-center gap-2 border-b border-line bg-[#2c1416] px-3 py-1.5 text-xs text-hard">
+          <AlertCircle className="size-3.5 flex-none" />
+          <span className="truncate">Couldn’t format — {fmt.error}</span>
+        </div>
+      )}
+
       {/* Editor */}
-      <div className="code-editor relative min-h-[420px] flex-1">
+      <div
+        className="code-editor relative min-h-[400px] flex-1"
+        onKeyDownCapture={(e) => {
+          if (e.shiftKey && e.altKey && e.code === "KeyF") {
+            e.preventDefault();
+            e.stopPropagation();
+            format();
+          }
+        }}
+      >
         {active ? (
           <CodeMirror
             key={active.key}
             value={active.code}
             height="100%"
-            minHeight="420px"
-            theme={vscodeDark}
+            minHeight="400px"
+            theme={dsaTheme}
             extensions={extensions}
-            placeholder="// Write or paste your solution"
+            placeholder="// Write your Java solution"
             basicSetup={{ highlightActiveLine: true, foldGutter: true, autocompletion: true, tabSize: 4 }}
             indentWithTab
             onChange={(code) => update(active.key, { code })}
-            onUpdate={(v) => {
-              if (!v.selectionSet && !v.docChanged) return;
-              const head = v.state.selection.main.head;
-              const line = v.state.doc.lineAt(head);
-              setCursor({ line: line.number, col: head - line.from + 1 });
-            }}
             className="absolute inset-0 overflow-auto"
           />
         ) : (
-          <div className="flex h-full min-h-[420px] flex-col items-center justify-center gap-3 text-sm text-[#969696]">
-            <FileCode2 className="size-8 opacity-50" />
+          <div className="flex h-full min-h-[400px] flex-col items-center justify-center gap-3 text-sm text-mute">
             No code yet
             <button
               type="button"
               onClick={add}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[#0e639c] px-3 text-[13px] font-medium text-white hover:bg-[#1177bb]"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand px-3 text-[13px] font-semibold text-brand-ink hover:bg-brand-soft"
             >
-              <Plus className="size-4" /> New file
+              <Plus className="size-4" /> New snippet
             </button>
           </div>
         )}
       </div>
 
-      {/* Status bar */}
-      {active && lang && (
-        <div className="flex h-7 items-center justify-end gap-1 bg-[#007acc]/90 px-2 text-[12px] text-white">
-          <span className="mr-auto pl-1 font-mono opacity-90">{active.name}</span>
-          <span className="px-2 opacity-90">
-            Ln {cursor.line}, Col {cursor.col}
-          </span>
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex h-6 items-center gap-1 rounded-sm px-2 hover:bg-white/15">
-              {lang.label}
-              <ChevronDown className="size-3" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuRadioGroup value={active.language} onValueChange={setLanguage}>
-                {LANGS.map((l) => (
-                  <DropdownMenuRadioItem key={l.id} value={l.id}>
-                    {l.label}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+      {/* Complexity for this snippet */}
+      {active && (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-1 border-t border-line bg-panel px-3.5 py-2 font-mono text-[12.5px]">
+          <ComplexityInput label="Time" value={active.timeComplexity} onChange={(v) => update(active.key, { timeComplexity: v })} />
+          <ComplexityInput label="Space" value={active.spaceComplexity} onChange={(v) => update(active.key, { spaceComplexity: v })} />
         </div>
       )}
     </div>
+  );
+}
+
+function ComplexityInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <label className="flex items-center gap-2 text-mute">
+      {label}
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="O(?)"
+        spellCheck={false}
+        className="h-7 w-32 rounded-md bg-transparent px-1.5 text-ink placeholder:text-[#4a5462] hover:bg-white/5 focus:bg-chip focus:ring-1 focus:ring-brand/40 focus:outline-none"
+      />
+    </label>
   );
 }

@@ -1,6 +1,8 @@
-/** Starting notes for a new problem (HTML for the rich-text editor). */
-export const NOTES_TEMPLATE =
-  "<h2>Intuition</h2><p></p><h2>Approach</h2><ol><li><p></p></li></ol><h2>Edge cases</h2><ul><li><p></p></li></ul><h2>Mistakes</h2><ul><li><p></p></li></ul>";
+/** Starting notes for a new problem: empty. */
+export const NOTES_TEMPLATE = "";
+
+// The old starter template (headings only). Notes that still match it count as empty.
+const LEGACY_TEMPLATE_TEXT = "IntuitionApproachEdgecasesMistakes";
 
 function textOf(html: string) {
   return html
@@ -9,10 +11,8 @@ function textOf(html: string) {
     .replace(/\s+/g, "");
 }
 
-const TEMPLATE_TEXT = textOf(NOTES_TEMPLATE);
-
-/** True when the notes contain any text beyond the blank template headings. */
+/** True when the notes contain any text (an untouched old template counts as empty). */
 export function hasRealNotes(notes: string) {
   const t = textOf(notes);
-  return t !== "" && t !== TEMPLATE_TEXT;
+  return t !== "" && t !== LEGACY_TEMPLATE_TEXT;
 }

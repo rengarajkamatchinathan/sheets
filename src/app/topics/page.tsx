@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LayoutGrid, List } from "lucide-react";
 import { connection } from "next/server";
 import { createTopic } from "@/app/actions";
 import { Bar, Card, DIFF_TEXT, StatusPill, btnGhost, btnPrimary, inputCls } from "@/components/kit";
@@ -16,6 +17,7 @@ export default async function TopicsPage({ searchParams }: PageProps<"/topics">)
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
   const filter = typeof sp.f === "string" ? sp.f : "all";
+  const view = sp.view === "grid" ? "grid" : "list";
 
   const [all, matches] = await Promise.all([getTopicStats(), q ? searchProblems(q) : Promise.resolve([])]);
   const totalSolved = all.reduce((a, t) => a + t.solved, 0);
@@ -29,10 +31,11 @@ export default async function TopicsPage({ searchParams }: PageProps<"/topics">)
     return true;
   });
 
-  const href = (f: string) => {
+  const href = (f: string, v: string = view) => {
     const p = new URLSearchParams();
     if (q) p.set("q", q);
     if (f !== "all") p.set("f", f);
+    if (v !== "list") p.set("view", v);
     const s = p.toString();
     return s ? `/topics?${s}` : "/topics";
   };
@@ -49,6 +52,7 @@ export default async function TopicsPage({ searchParams }: PageProps<"/topics">)
         <div className="flex flex-wrap items-center gap-3">
           <form action="/topics" className="flex items-center">
             {filter !== "all" && <input type="hidden" name="f" value={filter} />}
+            {view !== "list" && <input type="hidden" name="view" value={view} />}
             <label className="sr-only" htmlFor="q">
               Search
             </label>
@@ -71,6 +75,7 @@ export default async function TopicsPage({ searchParams }: PageProps<"/topics">)
         </div>
       </header>
 
+      <div className="flex flex-wrap items-center justify-between gap-3">
       <div role="group" aria-label="Filter topics" className="flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <Link
@@ -84,6 +89,25 @@ export default async function TopicsPage({ searchParams }: PageProps<"/topics">)
             {f.label}
           </Link>
         ))}
+      </div>
+        <div role="group" aria-label="View" className="flex rounded-lg border border-line2 bg-side p-0.5">
+          {([
+            ["list", "List", <List key="l" className="size-4" />],
+            ["grid", "Grid", <LayoutGrid key="g" className="size-4" />],
+          ] as const).map(([v, label, icon]) => (
+            <Link
+              key={v}
+              href={href(filter, v)}
+              aria-current={view === v ? "true" : undefined}
+              className={`inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[13px] ${
+                view === v ? "bg-chip font-semibold text-ink" : "text-mute hover:text-ink"
+              }`}
+            >
+              {icon}
+              {label}
+            </Link>
+          ))}
+        </div>
       </div>
 
       {q && matches.length > 0 && (
@@ -108,6 +132,8 @@ export default async function TopicsPage({ searchParams }: PageProps<"/topics">)
 
       {topics.length === 0 ? (
         <p className="text-sm text-mute">No topics match.</p>
+      ) : view === "list" ? (
+        <TopicList topics={topics} all={all} />
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
           {topics.map((t) => {
@@ -149,5 +175,61 @@ export default async function TopicsPage({ searchParams }: PageProps<"/topics">)
         </div>
       )}
     </div>
+  );
+}
+
+type TopicRow = Awaited<ReturnType<typeof getTopicStats>>[number];
+
+function TopicList({ topics, all }: { topics: TopicRow[]; all: TopicRow[] }) {
+  const cols = "md:grid-cols-[2.5rem_minmax(0,1fr)_6rem_8.5rem_minmax(8rem,14rem)_4.5rem]";
+  return (
+    <Card className="overflow-hidden">
+      <div
+        aria-hidden="true"
+        className={`hidden gap-4 border-b border-line px-5 py-2.5 text-[11px] font-semibold tracking-wide text-mute uppercase md:grid ${cols}`}
+      >
+        <span>#</span>
+        <span>Topic</span>
+        <span>Patterns</span>
+        <span>Difficulty</span>
+        <span>Progress</span>
+        <span className="text-right">Solved</span>
+      </div>
+      <ul>
+        {topics.map((t) => {
+          const pct = t.total ? Math.round((t.solved / t.total) * 100) : 0;
+          const done = t.total > 0 && t.solved === t.total;
+          return (
+            <li key={t.id} className="border-t border-line first:border-t-0">
+              <Link
+                href={`/topics/${t.slug}`}
+                className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-5 py-3 transition-colors hover:bg-[#1a2029] ${cols}`}
+              >
+                <span className="hidden font-mono text-xs text-mute md:block">{String(all.indexOf(t) + 1).padStart(2, "0")}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="truncate text-[15px] font-medium">{t.name}</span>
+                  {done && <span className="flex-none rounded-full bg-[#12291a] px-2 py-0.5 text-[11px] font-semibold text-easy">Done</span>}
+                </span>
+                <span className="hidden text-[13px] text-mute md:block">{t.patterns}</span>
+                <span className="hidden gap-2.5 font-mono text-xs md:flex">
+                  <span className="text-easy">E {t.easy}</span>
+                  <span className="text-medium">M {t.medium}</span>
+                  <span className="text-hard">H {t.hard}</span>
+                </span>
+                <span className="col-span-2 flex items-center gap-3 md:col-span-1">
+                  <span className="flex-1">
+                    <Bar value={t.solved} max={t.total} />
+                  </span>
+                  <span className="w-9 text-right font-mono text-xs text-mute">{pct}%</span>
+                </span>
+                <span className="row-start-1 text-right font-mono text-[13px] text-soft md:row-start-auto">
+                  {t.solved}/{t.total}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
   );
 }

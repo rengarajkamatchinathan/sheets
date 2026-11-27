@@ -148,7 +148,7 @@
 }
 
 /* ── Code editor (CodeMirror) ───────────────────────────────────────── */
-.code-editor .cm-editor { height: 100%; background: #1e1e1e; }
+.code-editor .cm-editor { height: 100%; }
 .code-editor .cm-editor.cm-focused { outline: none; }
 .code-editor .cm-scroller { font-family: var(--font-mono); font-size: 13px; line-height: 1.65; }
-.code-editor .cm-gutters { background: #1e1e1e; border-right: none; }
+.code-editor .cm-gutters { border-right: none; padding-left: 4px; }

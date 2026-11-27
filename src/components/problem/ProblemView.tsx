@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { hasRealNotes } from "@/lib/template";
 import { cn } from "@/lib/utils";
 import CodeTabs, { type Tab } from "./CodeTabs";
 import NotesEditor from "./NotesEditor";
@@ -24,25 +25,22 @@ export default function ProblemView({
   patterns,
   initial,
   initialTabs,
-  initialSolvedAt,
 }: {
   id: number;
   topicSlug: string;
   patterns: { id: number; name: string }[];
   initial: ProblemUpdate;
   initialTabs: Tab[];
-  initialSolvedAt: string | null;
 }) {
   const [fields, setFields] = useState<ProblemUpdate>(initial);
   const [tabs, setTabs] = useState<Tab[]>(initialTabs);
-  const [solvedAt, setSolvedAt] = useState(initialSolvedAt);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
   const [, startDelete] = useTransition();
 
   // Everything that should trigger a save (tab DB ids excluded: they change as a result of saving).
   const snap = useMemo(
-    () => JSON.stringify({ fields, tabs: tabs.map(({ key, name, language, code }) => ({ key, name, language, code })) }),
+    () => JSON.stringify({ fields, tabs: tabs.map((t) => ({ ...t, id: undefined })) }),
     [fields, tabs],
   );
   const [savedSnap, setSavedSnap] = useState(snap);
@@ -64,11 +62,10 @@ export default function ProblemView({
       const res = await updateProblem(
         id,
         f,
-        t.map((x) => ({ key: x.key, id: knownIds.current[x.key] ?? x.id, name: x.name, language: x.language, code: x.code })),
+        t.map((x) => ({ ...x, id: knownIds.current[x.key] ?? x.id })),
       );
       Object.assign(knownIds.current, res.ids);
       setTabs((prev) => prev.map((x) => (res.ids[x.key] != null && x.id !== res.ids[x.key] ? { ...x, id: res.ids[x.key] } : x)));
-      setSolvedAt(res.solvedAt);
       setSavedSnap(s);
       setError(false);
     } catch {
@@ -120,7 +117,7 @@ export default function ProblemView({
           value={fields.title}
           onChange={(e) => set("title", e.target.value)}
           spellCheck={false}
-          className="-mx-2 min-w-0 flex-1 rounded-lg bg-transparent px-2 py-1 text-3xl font-bold tracking-tight text-ink hover:bg-white/[0.03] focus:bg-white/[0.03] focus:outline-none"
+          className="-mx-2 min-w-0 flex-1 rounded-lg bg-transparent px-2 py-1 text-[28px] font-bold tracking-tight text-ink hover:bg-white/[0.03] focus:bg-white/[0.03] focus:outline-none"
         />
         <div className="flex items-center gap-1.5 pt-1.5">
           <SaveState saving={saving} dirty={dirty} error={error} onRetry={() => (setError(false), flush())} />
@@ -174,21 +171,25 @@ export default function ProblemView({
         </div>
       </header>
 
-      <section aria-label="Properties" className="-mt-2 border-b border-line pb-4">
-        <Properties v={props} set={(k, v) => set(k, v as never)} patterns={patterns} solvedAt={solvedAt} />
+      <section aria-label="Properties" className="-mt-5">
+        <Properties v={props} set={(k, v) => set(k, v as never)} patterns={patterns} />
       </section>
 
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <section aria-label="Notes" className="min-w-0">
-          <SectionTitle hint="Select text to format · # heading · - list">Notes</SectionTitle>
+          <SectionTitle hint={hasRealNotes(fields.notes) ? null : "Select text to format · # heading · - list"}>Notes</SectionTitle>
           <div className="rounded-xl px-1 py-2">
             <NotesEditor initial={initial.notes} onChange={(html) => set("notes", html)} />
           </div>
         </section>
 
         <section aria-label="Code" className="min-w-0 xl:sticky xl:top-6">
-          <SectionTitle hint="+ new file · double-click a tab to rename">Code</SectionTitle>
-          <div className="h-[560px]">
+          <SectionTitle
+            hint={tabs.some((t) => t.code.trim()) ? null : "+ new snippet · double-click a tab to rename · Shift+Alt+F to format"}
+          >
+            Code
+          </SectionTitle>
+          <div className="h-[620px]">
             <CodeTabs tabs={tabs} onChange={setTabs} />
           </div>
         </section>
@@ -197,11 +198,12 @@ export default function ProblemView({
   );
 }
 
-function SectionTitle({ hint, children }: { hint: string; children: React.ReactNode }) {
+/** Section heading; the usage hint is only shown until the section has content. */
+function SectionTitle({ hint, children }: { hint: string | null; children: React.ReactNode }) {
   return (
     <div className="mb-2 flex items-baseline justify-between gap-3">
       <h2 className="text-[13px] font-semibold tracking-wide text-mute uppercase">{children}</h2>
-      <span className="hidden text-xs text-[#5b6675] sm:inline">{hint}</span>
+      {hint && <span className="hidden text-xs text-[#5b6675] sm:inline">{hint}</span>}
     </div>
   );
 }

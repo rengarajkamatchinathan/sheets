@@ -154,8 +154,6 @@ export type ProblemUpdate = {
   starred: boolean;
   tags: string[];
   notes: string; // HTML from the rich-text editor
-  timeComplexity: string;
-  spaceComplexity: string;
   timeTakenMin: number | null;
 };
 
@@ -165,9 +163,10 @@ export type SnippetInput = {
   name: string;
   language: string;
   code: string;
+  timeComplexity: string;
+  spaceComplexity: string;
 };
 
-const LANGUAGES = ["python", "java", "cpp", "javascript", "typescript", "go", "plaintext"];
 
 /**
  * Saves the problem's fields, notes and its full list of code tabs (in tab order).
@@ -197,8 +196,6 @@ export async function updateProblem(id: number, data: ProblemUpdate, tabs: Snipp
       starred: data.starred,
       tags: [...new Set(data.tags.map((t) => t.trim()).filter(Boolean))],
       notes: data.notes,
-      timeComplexity: data.timeComplexity.trim(),
-      spaceComplexity: data.spaceComplexity.trim(),
       timeTakenMin: data.timeTakenMin,
       solvedAt,
       updatedAt: now,
@@ -216,9 +213,11 @@ export async function updateProblem(id: number, data: ProblemUpdate, tabs: Snipp
   const ids: Record<string, number> = {};
   for (const [i, t] of tabs.entries()) {
     const values = {
-      name: t.name.trim() || "untitled",
-      language: LANGUAGES.includes(t.language) ? t.language : "plaintext",
+      name: t.name.trim().slice(0, 60) || "Untitled",
+      language: "java", // all snippets are Java
       code: t.code,
+      timeComplexity: t.timeComplexity.trim(),
+      spaceComplexity: t.spaceComplexity.trim(),
       sortOrder: i,
       updatedAt: now,
     };
