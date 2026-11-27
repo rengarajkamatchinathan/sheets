@@ -15,7 +15,8 @@ import {
   Star,
   Trash2,
 } from "lucide-react";
-import { useDefaultLayout, type GroupImperativeHandle } from "react-resizable-panels";
+import type { GroupImperativeHandle } from "react-resizable-panels";
+import { DEFAULT_SPLIT, saveSplit, type Split } from "@/lib/split";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { useMediaQuery, useStoredState } from "@/lib/hooks";
 import DescriptionPanel from "./DescriptionPanel";
@@ -42,12 +43,15 @@ export default function ProblemView({
   patterns,
   initial,
   initialTabs,
+  split,
 }: {
   id: number;
   topicSlug: string;
   patterns: { id: number; name: string }[];
   initial: ProblemUpdate;
   initialTabs: Tab[];
+  /** Saved Notes/Code split (read from a cookie on the server). */
+  split: Split;
 }) {
   const [fields, setFields] = useState<ProblemUpdate>(initial);
   const [tabs, setTabs] = useState<Tab[]>(initialTabs);
@@ -194,6 +198,7 @@ export default function ProblemView({
 
       <Workspace
         problemId={id}
+        split={split}
         notes={
           <div className="flex flex-col gap-2">
             {!hasRealNotes(fields.notes) && (
@@ -222,38 +227,21 @@ const LEFT_TABS: { id: LeftTab; label: string; Icon: typeof NotebookPen }[] = [
   { id: "notes", label: "Notes", Icon: NotebookPen },
   { id: "description", label: "Description", Icon: FileText },
 ];
-const DEFAULT_LAYOUT = { left: 45, right: 55 };
-
-/** localStorage for the saved split, safe during server rendering (no window there). */
-const layoutStorage = {
-  getItem: (key: string) => {
-    try {
-      return typeof window === "undefined" ? null : window.localStorage.getItem(key);
-    } catch {
-      return null;
-    }
-  },
-  setItem: (key: string, value: string) => {
-    try {
-      if (typeof window !== "undefined") window.localStorage.setItem(key, value);
-    } catch {
-      // Storage blocked: the split just won't be remembered.
-    }
-  },
-};
-
 /**
  * LeetCode-style workspace. Desktop: resizable left (Notes | Description) and right
- * (Code) panels; the split is remembered, double-click the handle to reset, ⤢ to
- * maximise a panel. Small screens: one tab bar, one panel at a time.
+ * (Code) panels; the split is remembered (cookie, so the server renders it too),
+ * double-click the handle to reset, ⤢ to maximise a panel.
+ * Small screens: one tab bar, one panel at a time.
  */
 function Workspace({
   problemId,
+  split,
   notes,
   description,
   code,
 }: {
   problemId: number;
+  split: Split;
   notes: React.ReactNode;
   description: React.ReactNode;
   code: (extra: React.ReactNode) => React.ReactNode;
@@ -263,11 +251,6 @@ function Workspace({
   const [mobileTab, setMobileTab] = useState<LeftTab | "code">("notes");
   const [maxed, setMaxed] = useState<"left" | "right" | null>(null);
   const groupRef = useRef<GroupImperativeHandle | null>(null);
-  const { defaultLayout, onLayoutChanged } = useDefaultLayout({
-    id: "dsa-problem-split",
-    panelIds: ["left", "right"],
-    storage: layoutStorage,
-  });
 
   const panel = "flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-line bg-[#0f1318]";
 
@@ -321,19 +304,22 @@ function Workspace({
           orientation="horizontal"
           id="dsa-problem-split"
           groupRef={groupRef}
-          defaultLayout={defaultLayout ?? DEFAULT_LAYOUT}
-          onLayoutChanged={onLayoutChanged}
+          defaultLayout={split}
+          onLayoutChanged={(layout) => saveSplit({ left: layout.left, right: layout.right })}
         >
-          <ResizablePanel id="left" minSize="25" defaultSize="45">
+          <ResizablePanel id="left" minSize="25" defaultSize={String(split.left)}>
             {left}
           </ResizablePanel>
           <ResizableHandle
             withHandle
-            onDoubleClick={() => groupRef.current?.setLayout(DEFAULT_LAYOUT)}
+            onDoubleClick={() => {
+              groupRef.current?.setLayout(DEFAULT_SPLIT);
+              saveSplit(DEFAULT_SPLIT);
+            }}
             title="Drag to resize · double-click to reset"
             className="mx-1 w-1.5 rounded-full bg-transparent transition-colors hover:bg-brand/30 data-[separator=active]:bg-brand/50 [&>div]:h-8 [&>div]:bg-line2"
           />
-          <ResizablePanel id="right" minSize="30" defaultSize="55">
+          <ResizablePanel id="right" minSize="30" defaultSize={String(split.right)}>
             {right}
           </ResizablePanel>
         </ResizablePanelGroup>
