@@ -47,7 +47,7 @@ export function Bar({ value, max, color }: { value: number; max: number; color?:
 }
 
 export function Card({ className = "", children }: { className?: string; children: React.ReactNode }) {
-  return <section className={`rounded-2xl border border-line bg-panel ${className}`}>{children}</section>;
+  return <section className={`rounded-2xl bg-white/[0.02] ${className}`}>{children}</section>;
 }
 
 export const inputCls =
@@ -58,3 +58,60 @@ export const btnPrimary =
 
 export const btnGhost =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line2 px-4 text-sm font-semibold text-ink hover:bg-chip";
+
+/** Small circular progress ring; turns green when complete. */
+export function Ring({
+  value,
+  max,
+  size = 28,
+  stroke = 3,
+  label,
+  children,
+}: {
+  value: number;
+  max: number;
+  size?: number;
+  stroke?: number;
+  label?: string;
+  children?: React.ReactNode;
+}) {
+  const r = (size - stroke) / 2;
+  const C = 2 * Math.PI * r;
+  const frac = max > 0 ? value / max : 0;
+  const done = max > 0 && value >= max;
+  return (
+    <span className="relative inline-flex flex-none items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : true}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#232a34" strokeWidth={stroke} />
+        {frac > 0 && (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={done ? "#4ade80" : "#2dd4bf"}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={`${C * frac} ${C}`}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          />
+        )}
+      </svg>
+      {children && <span className="absolute inset-0 flex items-center justify-center">{children}</span>}
+    </span>
+  );
+}
+
+/** One dot per problem, coloured by status — makes a group read as a small, finite set. */
+export function StatusDots({ statuses, max = 12 }: { statuses: ("Todo" | "Attempted" | "Solved")[]; max?: number }) {
+  const shown = statuses.slice(0, max);
+  const color = { Solved: "#4ade80", Attempted: "#fbbf24", Todo: "#2e3744" } as const;
+  return (
+    <span className="flex items-center gap-1" aria-hidden="true">
+      {shown.map((s, i) => (
+        <span key={i} className="size-1.5 rounded-full" style={{ background: color[s] }} />
+      ))}
+      {statuses.length > max && <span className="ml-0.5 text-[10px] text-mute">+{statuses.length - max}</span>}
+    </span>
+  );
+}
