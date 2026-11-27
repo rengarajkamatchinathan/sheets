@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import IntentLink from "./IntentLink";
 import { useOptimistic, useState, useTransition } from "react";
 import {
   BookOpen,
@@ -450,13 +450,13 @@ function ProblemRow({
         </span>
       </button>
 
-      <Link
+      <IntentLink
         href={`/problems/${p.id}`}
         draggable={false}
         className={cn("min-w-0 flex-1 truncate text-sm hover:text-ink", solved ? "text-mute" : "text-soft")}
       >
         {p.title}
-      </Link>
+      </IntentLink>
 
       {/* Quiet indicators: only shown when there is something */}
       <span className="flex flex-none items-center gap-1.5 text-[#5b6675]">

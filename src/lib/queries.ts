@@ -1,25 +1,24 @@
 import "server-only";
+import { cacheLife, cacheTag } from "next/cache";
 import { asc, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { patterns, problems, snippets, topics } from "@/db/schema";
-import { hasRealNotes } from "./template";
 import { TZ } from "./dates";
+import { cleanDescription, cleanRichText } from "./sanitize";
+import { CACHE_FOREVER, TAGS } from "./tags";
 
-export type TopicStat = {
-  id: number;
-  name: string;
-  slug: string;
-  description: string;
-  total: number;
-  solved: number;
-  easy: number;
-  medium: number;
-  hard: number;
-  patterns: number;
-};
+/*
+ * Performance notes
+ * - Every page loader sends its queries to Neon as ONE batched HTTP request
+ *   (`db.batch`), instead of several round trips (~150ms each from India → Singapore).
+ * - Loaders are cached with "use cache" and tagged (see ./tags); server actions expire
+ *   the tags they affect, so pages are served from memory until something changes.
+ */
 
-export async function getTopicStats(): Promise<TopicStat[]> {
-  const rows = await db
+// ── Query builders (not executed until batched) ────────────────────────────
+
+const topicStatsQ = () =>
+  db
     .select({
       id: topics.id,
       name: topics.name,
@@ -36,11 +35,9 @@ export async function getTopicStats(): Promise<TopicStat[]> {
     .leftJoin(problems, eq(problems.topicId, topics.id))
     .groupBy(topics.id)
     .orderBy(asc(topics.sortOrder), asc(topics.id));
-  return rows;
-}
 
-export async function getDifficultyStats() {
-  const rows = await db
+const difficultyQ = () =>
+  db
     .select({
       difficulty: problems.difficulty,
       total: sql<number>`count(*)::int`,
@@ -49,25 +46,16 @@ export async function getDifficultyStats() {
     })
     .from(problems)
     .groupBy(problems.difficulty);
-  const by = Object.fromEntries(rows.map((r) => [r.difficulty, r]));
-  return (["Easy", "Medium", "Hard"] as const).map((d) => ({
-    difficulty: d,
-    total: by[d]?.total ?? 0,
-    solved: by[d]?.solved ?? 0,
-    attempted: by[d]?.attempted ?? 0,
-  }));
-}
 
-/** Map of YYYY-MM-DD (in APP_TIMEZONE) → number of problems solved that day. */
-export async function getSolvedPerDay(): Promise<Map<string, number>> {
-  const day = sql<string>`to_char(${problems.solvedAt} at time zone ${TZ}, 'YYYY-MM-DD')`;
-  const rows = await db
-    .select({ day, count: sql<number>`count(*)::int` })
+const solvedPerDayQ = () =>
+  db
+    .select({
+      day: sql<string>`to_char(${problems.solvedAt} at time zone ${TZ}, 'YYYY-MM-DD')`,
+      count: sql<number>`count(*)::int`,
+    })
     .from(problems)
     .where(isNotNull(problems.solvedAt))
     .groupBy(sql`1`); // by position: the tz is a bind param, so a repeated expression wouldn't match
-  return new Map(rows.map((r) => [r.day, r.count]));
-}
 
 const problemCard = {
   id: problems.id,
@@ -79,64 +67,16 @@ const problemCard = {
   patternName: patterns.name,
 };
 
-/** Problems you've started but not finished, most recently touched first. */
-export async function getInProgress(limit = 4) {
-  return db
-    .select(problemCard)
-    .from(problems)
-    .innerJoin(topics, eq(problems.topicId, topics.id))
-    .leftJoin(patterns, eq(problems.patternId, patterns.id))
-    .where(eq(problems.status, "Attempted"))
-    .orderBy(desc(problems.updatedAt))
-    .limit(limit);
-}
+const cardsQ = () =>
+  db.select(problemCard).from(problems).innerJoin(topics, eq(problems.topicId, topics.id)).leftJoin(patterns, eq(problems.patternId, patterns.id));
 
-/** The next Todo in sheet order: topic → pattern (Unsorted last) → problem. */
-export async function getNextTodo() {
-  const [row] = await db
-    .select(problemCard)
-    .from(problems)
-    .innerJoin(topics, eq(problems.topicId, topics.id))
-    .leftJoin(patterns, eq(problems.patternId, patterns.id))
-    .where(eq(problems.status, "Todo"))
-    .orderBy(
-      asc(topics.sortOrder),
-      asc(topics.id),
-      sql`${patterns.sortOrder} asc nulls last`,
-      asc(problems.sortOrder),
-      asc(problems.id),
-    )
-    .limit(1);
-  return row ?? null;
-}
+// "Has notes" computed in SQL so the board never downloads full notes.
+// An untouched legacy template (headings only) counts as empty.
+const hasNotesSql = sql<boolean>`regexp_replace(regexp_replace(${problems.notes}, '<[^>]*>', '', 'g'), '(\\s|&nbsp;)+', '', 'g') not in ('', 'IntuitionApproachEdgecasesMistakes')`;
 
-export async function getStarred(limit = 6) {
-  return db
-    .select(problemCard)
-    .from(problems)
-    .innerJoin(topics, eq(problems.topicId, topics.id))
-    .leftJoin(patterns, eq(problems.patternId, patterns.id))
-    .where(eq(problems.starred, true))
-    .orderBy(desc(problems.updatedAt))
-    .limit(limit);
-}
+// ── Types ───────────────────────────────────────────────────────────────────
 
-/** Problems you opened most recently. */
-export async function getRecentViewed(limit = 6) {
-  return db
-    .select({ ...problemCard, lastViewedAt: problems.lastViewedAt })
-    .from(problems)
-    .innerJoin(topics, eq(problems.topicId, topics.id))
-    .leftJoin(patterns, eq(problems.patternId, patterns.id))
-    .where(isNotNull(problems.lastViewedAt))
-    .orderBy(desc(problems.lastViewedAt))
-    .limit(limit);
-}
-
-export async function getTopicBySlug(slug: string) {
-  const [t] = await db.select().from(topics).where(eq(topics.slug, slug)).limit(1);
-  return t ?? null;
-}
+export type TopicStat = Awaited<ReturnType<typeof topicStatsQ>>[number];
 
 export type BoardProblem = {
   id: number;
@@ -153,10 +93,74 @@ export type BoardProblem = {
   hasDescription: boolean;
 };
 
-/** Everything the topic page's accordion needs, in display order. */
-export async function getTopicBoard(topicId: number) {
-  const [pats, rows] = await Promise.all([
-    getPatternsForTopic(topicId),
+// ── Cached page loaders ─────────────────────────────────────────────────────
+
+/** Dashboard: everything in one round trip. */
+export async function loadDashboard() {
+  "use cache";
+  cacheLife(CACHE_FOREVER);
+  cacheTag(TAGS.stats, TAGS.views);
+
+  const [topicStats, diffRows, perDay, inProgress, nextTodo, starred, recent] = await db.batch([
+    topicStatsQ(),
+    difficultyQ(),
+    solvedPerDayQ(),
+    cardsQ().where(eq(problems.status, "Attempted")).orderBy(desc(problems.updatedAt)).limit(4),
+    cardsQ()
+      .where(eq(problems.status, "Todo"))
+      .orderBy(asc(topics.sortOrder), asc(topics.id), sql`${patterns.sortOrder} asc nulls last`, asc(problems.sortOrder), asc(problems.id))
+      .limit(1),
+    cardsQ().where(eq(problems.starred, true)).orderBy(desc(problems.updatedAt)).limit(5),
+    db
+      .select({ ...problemCard, lastViewedAt: problems.lastViewedAt })
+      .from(problems)
+      .innerJoin(topics, eq(problems.topicId, topics.id))
+      .leftJoin(patterns, eq(problems.patternId, patterns.id))
+      .where(isNotNull(problems.lastViewedAt))
+      .orderBy(desc(problems.lastViewedAt))
+      .limit(6),
+  ]);
+
+  const by = Object.fromEntries(diffRows.map((r) => [r.difficulty, r]));
+  const difficulty = (["Easy", "Medium", "Hard"] as const).map((d) => ({
+    difficulty: d,
+    total: by[d]?.total ?? 0,
+    solved: by[d]?.solved ?? 0,
+    attempted: by[d]?.attempted ?? 0,
+  }));
+
+  return {
+    topics: topicStats,
+    difficulty,
+    perDay: perDay.map((r) => [r.day, r.count] as [string, number]),
+    inProgress,
+    nextTodo: nextTodo[0] ?? null,
+    starred,
+    recent,
+  };
+}
+
+/** Topics list (also used by the new-problem form). */
+export async function loadTopics() {
+  "use cache";
+  cacheLife(CACHE_FOREVER);
+  cacheTag(TAGS.stats);
+  return topicStatsQ();
+}
+
+/** Topic page: topic + patterns + board in one round trip (all keyed by slug). */
+export async function loadTopicPage(slug: string) {
+  "use cache";
+  cacheLife(CACHE_FOREVER);
+
+  const topicId = sql`(select ${topics.id} from ${topics} where ${topics.slug} = ${slug})`;
+  const [topicRows, pats, rows] = await db.batch([
+    db.select().from(topics).where(eq(topics.slug, slug)).limit(1),
+    db
+      .select({ id: patterns.id, name: patterns.name })
+      .from(patterns)
+      .where(sql`${patterns.topicId} = ${topicId}`)
+      .orderBy(asc(patterns.sortOrder), asc(patterns.id)),
     db
       .select({
         id: problems.id,
@@ -168,55 +172,67 @@ export async function getTopicBoard(topicId: number) {
         starred: problems.starred,
         patternId: problems.patternId,
         tags: problems.tags,
-        notes: problems.notes,
+        hasNotes: hasNotesSql,
         hasCode: sql<boolean>`exists (select 1 from ${snippets} where ${snippets.problemId} = ${problems.id} and length(trim(${snippets.code})) > 0)`,
         hasDescription: sql<boolean>`length(trim(${problems.description})) > 0`,
       })
       .from(problems)
-      .where(eq(problems.topicId, topicId))
+      .where(sql`${problems.topicId} = ${topicId}`)
       .orderBy(asc(problems.sortOrder), asc(problems.id)),
   ]);
-  const board: BoardProblem[] = rows.map(({ notes, ...r }) => ({ ...r, hasNotes: hasRealNotes(notes) }));
-  return { patterns: pats, problems: board };
+
+  const topic = topicRows[0] ?? null;
+  if (topic) cacheTag(TAGS.topic(topic.id));
+  return { topic, patterns: pats, problems: rows as BoardProblem[] };
 }
 
-export async function getPatternsForTopic(topicId: number) {
-  return db
-    .select({ id: patterns.id, name: patterns.name })
-    .from(patterns)
-    .where(eq(patterns.topicId, topicId))
-    .orderBy(asc(patterns.sortOrder), asc(patterns.id));
+/** Problem page: problem + topic + pattern name + topic's patterns + snippets in one round trip. */
+export async function loadProblemPage(id: number) {
+  "use cache";
+  cacheLife(CACHE_FOREVER);
+  cacheTag(TAGS.problem(id));
+
+  const topicOfProblem = sql`(select ${problems.topicId} from ${problems} where ${problems.id} = ${id})`;
+  const [rows, pats, snips] = await db.batch([
+    db
+      .select({
+        problem: problems,
+        topic: { id: topics.id, name: topics.name, slug: topics.slug },
+        patternName: patterns.name,
+      })
+      .from(problems)
+      .innerJoin(topics, eq(problems.topicId, topics.id))
+      .leftJoin(patterns, eq(problems.patternId, patterns.id))
+      .where(eq(problems.id, id))
+      .limit(1),
+    db
+      .select({ id: patterns.id, name: patterns.name })
+      .from(patterns)
+      .where(sql`${patterns.topicId} = ${topicOfProblem}`)
+      .orderBy(asc(patterns.sortOrder), asc(patterns.id)),
+    db
+      .select({
+        id: snippets.id,
+        name: snippets.name,
+        language: snippets.language,
+        code: snippets.code,
+        timeComplexity: snippets.timeComplexity,
+        spaceComplexity: snippets.spaceComplexity,
+      })
+      .from(snippets)
+      .where(eq(snippets.problemId, id))
+      .orderBy(asc(snippets.sortOrder), asc(snippets.id)),
+  ]);
+
+  const row = rows[0] ?? null;
+  if (row) cacheTag(TAGS.topic(row.topic.id)); // pattern renames/moves affect this page too
+  if (!row) return null;
+  // Sanitized here so the page can show notes/description as static HTML before the editor loads.
+  const problem = { ...row.problem, notes: cleanRichText(row.problem.notes), description: cleanDescription(row.problem.description) };
+  return { ...row, problem, patterns: pats, snippets: snips };
 }
 
-export async function getProblem(id: number) {
-  const [row] = await db
-    .select({
-      problem: problems,
-      topic: { id: topics.id, name: topics.name, slug: topics.slug },
-      patternName: patterns.name,
-    })
-    .from(problems)
-    .innerJoin(topics, eq(problems.topicId, topics.id))
-    .leftJoin(patterns, eq(problems.patternId, patterns.id))
-    .where(eq(problems.id, id))
-    .limit(1);
-  return row ?? null;
-}
-
-export async function getSnippets(problemId: number) {
-  return db
-    .select({
-      id: snippets.id,
-      name: snippets.name,
-      language: snippets.language,
-      code: snippets.code,
-      timeComplexity: snippets.timeComplexity,
-      spaceComplexity: snippets.spaceComplexity,
-    })
-    .from(snippets)
-    .where(eq(snippets.problemId, problemId))
-    .orderBy(asc(snippets.sortOrder), asc(snippets.id));
-}
+// ── Uncached (rare, input-dependent) ────────────────────────────────────────
 
 export async function searchProblems(q: string, limit = 30) {
   return db
@@ -235,8 +251,4 @@ export async function searchProblems(q: string, limit = 30) {
     )
     .orderBy(asc(problems.title))
     .limit(limit);
-}
-
-export async function getAllTopics() {
-  return db.select({ id: topics.id, name: topics.name, slug: topics.slug }).from(topics).orderBy(asc(topics.sortOrder), asc(topics.id));
 }

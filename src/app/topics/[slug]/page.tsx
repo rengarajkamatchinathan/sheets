@@ -1,23 +1,23 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
+import IntentLink from "@/components/IntentLink";
 import { ArrowRight, MoreHorizontal, Plus, Sparkles } from "lucide-react";
 import { createProblem, deleteTopic, updateTopic } from "@/app/actions";
 import TopicBoard from "@/components/TopicBoard";
 import { Ring, btnPrimary, inputCls } from "@/components/kit";
-import { getTopicBoard, getTopicBySlug } from "@/lib/queries";
+import { loadTopicPage } from "@/lib/queries";
 
 const quietBtn =
   "flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-md px-2 text-[13px] text-mute hover:bg-white/5 hover:text-ink [&::-webkit-details-marker]:hidden";
 const popover = "absolute right-0 z-40 mt-1 flex w-80 flex-col gap-3 rounded-xl border border-line2 bg-[#1c222b] p-4 shadow-2xl";
 
 export default async function TopicPage({ params }: PageProps<"/topics/[slug]">) {
-  await connection();
+
   const { slug } = await params;
-  const topic = await getTopicBySlug(slug);
+  const board = await loadTopicPage(slug);
+  const topic = board.topic;
   if (!topic) notFound();
 
-  const board = await getTopicBoard(topic.id);
   const all = board.problems;
   const solved = all.filter((p) => p.status === "Solved").length;
   const left = all.length - solved;
@@ -133,7 +133,7 @@ export default async function TopicPage({ params }: PageProps<"/topics/[slug]">)
         </div>
 
         {next ? (
-          <Link
+          <IntentLink eager
             href={`/problems/${next.id}`}
             className="group flex items-center gap-4 rounded-xl bg-brand/[0.07] p-4 ring-1 ring-brand/15 transition-colors hover:bg-brand/[0.11]"
           >
@@ -148,7 +148,7 @@ export default async function TopicPage({ params }: PageProps<"/topics/[slug]">)
               </span>
             </span>
             <ArrowRight className="size-4 flex-none text-brand-soft transition-transform group-hover:translate-x-0.5" />
-          </Link>
+          </IntentLink>
         ) : (
           <div className="flex items-center gap-4 rounded-xl bg-white/[0.02] p-4 text-sm text-mute">
             {all.length ? "Everything here is solved. Nice work." : "No problems yet — add one with + Problem."}

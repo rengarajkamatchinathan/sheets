@@ -1,1 +1,3 @@
-export { default } from "@/components/PageSkeleton";
+import { TopicSkeleton } from "@/components/skeletons";
+
+export default TopicSkeleton;

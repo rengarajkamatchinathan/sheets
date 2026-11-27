@@ -32,10 +32,17 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { hasRealNotes } from "@/lib/template";
 import { cn } from "@/lib/utils";
 import CodeTabs, { type Tab } from "./CodeTabs";
-import NotesEditor from "./NotesEditor";
+import RichText from "./RichText";
 import Properties, { type PropValues } from "./Properties";
 
 const AUTOSAVE_MS = 800;
+
+/** key → serialized content + position; a tab is "changed" when this differs from the last save. */
+function tabSignatures(tabs: Tab[]) {
+  return new Map(
+    tabs.map((t, i) => [t.key, JSON.stringify([i, t.name, t.code, t.timeComplexity, t.spaceComplexity])] as const),
+  );
+}
 
 export default function ProblemView({
   id,
@@ -73,19 +80,32 @@ export default function ProblemView({
   });
   const inFlight = useRef(false);
   const knownIds = useRef<Record<string, number>>({});
+  // Last successfully saved state — autosave sends only the difference from this.
+  const saved = useRef({ fields: initial, tabs: tabSignatures(initialTabs) });
 
   const flush = useCallback(async () => {
     if (inFlight.current) return; // re-scheduled when the current save finishes
     const { fields: f, tabs: t, snap: s } = latest.current;
+    const withIds = t.map((x) => ({ ...x, id: knownIds.current[x.key] ?? x.id }));
+
+    // Changed problem fields only.
+    const patch: Partial<ProblemUpdate> = {};
+    for (const k of Object.keys(f) as (keyof ProblemUpdate)[]) {
+      if (JSON.stringify(f[k]) !== JSON.stringify(saved.current.fields[k])) (patch as Record<string, unknown>)[k] = f[k];
+    }
+    // Changed tabs only (new, edited, or moved); the full order lets the server drop closed tabs.
+    const sigs = tabSignatures(withIds);
+    const changedTabs = withIds.filter((x) => x.id == null || saved.current.tabs.get(x.key) !== sigs.get(x.key));
+
     inFlight.current = true;
     setSaving(true);
     try {
-      const res = await updateProblem(
-        id,
-        f,
-        t.map((x) => ({ ...x, id: knownIds.current[x.key] ?? x.id })),
-      );
+      const res = await updateProblem(id, patch, {
+        order: withIds.map((x) => ({ key: x.key, id: x.id })),
+        changed: changedTabs,
+      });
       Object.assign(knownIds.current, res.ids);
+      saved.current = { fields: f, tabs: sigs };
       setTabs((prev) => prev.map((x) => (res.ids[x.key] != null && x.id !== res.ids[x.key] ? { ...x, id: res.ids[x.key] } : x)));
       setSavedSnap(s);
       setError(false);
@@ -205,7 +225,7 @@ export default function ProblemView({
               <p className="text-xs text-[#5b6675]">Select text to format · # heading · - list · ``` code</p>
             )}
             {/* `fields.notes` (not the initial prop) so switching tabs never loses edits */}
-            <NotesEditor initial={fields.notes} onChange={(html) => set("notes", html)} />
+            <RichText initial={fields.notes} onChange={(html) => set("notes", html)} />
           </div>
         }
         description={

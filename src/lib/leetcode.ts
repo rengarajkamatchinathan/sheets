@@ -1,5 +1,5 @@
 import "server-only";
-import sanitizeHtml from "sanitize-html";
+import { cleanDescription } from "./sanitize";
 
 /** "https://leetcode.com/problems/min-stack/description/" → "min-stack" */
 export function leetcodeSlug(url: string): string | null {
@@ -45,25 +45,3 @@ export async function fetchLeetCodeDescription(url: string): Promise<FetchResult
   }
 }
 
-/** Keep only the structure the editor understands; drop scripts, styles, classes, handlers. */
-export function cleanDescription(html: string) {
-  return sanitizeHtml(html, {
-    allowedTags: [
-      "p", "br", "strong", "b", "em", "i", "u", "s", "code", "pre", "sup", "sub",
-      "ul", "ol", "li", "blockquote", "h1", "h2", "h3", "h4", "a", "img", "hr", "div", "span",
-    ],
-    allowedAttributes: { a: ["href"], img: ["src", "alt", "width", "height"] },
-    allowedSchemes: ["https"],
-    allowedSchemesByTag: { img: ["https"] },
-    transformTags: {
-      b: "strong",
-      i: "em",
-      h4: "h3",
-      // LeetCode wraps examples in <div class="example-block">; keep as paragraphs.
-      div: "p",
-    },
-    exclusiveFilter: (frame) => frame.tag === "p" && !frame.text.trim() && !frame.mediaChildren.length,
-  })
-    .replace(/(&nbsp;| )+/g, " ")
-    .trim();
-}

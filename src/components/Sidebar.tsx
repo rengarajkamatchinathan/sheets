@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
-import { AnimatePresence, motion } from "motion/react";
 import { BookOpen, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -15,7 +14,6 @@ const NAV = [
 
 const RAIL = 52; // collapsed width (icons only)
 const FULL = 232; // expanded width
-const spring = { type: "spring", stiffness: 420, damping: 38 } as const;
 
 // ── Pinned state, persisted in localStorage and shared across tabs ──────────
 const PIN_KEY = "dsa-sidebar-pinned";
@@ -63,12 +61,10 @@ export function SidebarView({ path }: { path: string }) {
   return (
     <>
       {/* ── Desktop ─────────────────────────────────────────────── */}
-      <motion.nav
+      <nav
         aria-label="Main"
-        initial={false}
-        animate={{ width: open ? FULL : RAIL }}
-        transition={spring}
-        className="sticky top-0 hidden h-screen flex-none flex-col overflow-hidden border-r border-line bg-side py-4 md:flex"
+        style={{ width: open ? FULL : RAIL }}
+        className="sticky top-0 hidden h-screen flex-none flex-col overflow-hidden border-r border-line bg-side py-4 transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] md:flex"
       >
         <Link href="/" className="mb-6 flex h-10 items-center gap-3 px-[10px]" aria-label="DSA Log home">
           <Logo />
@@ -117,7 +113,7 @@ export function SidebarView({ path }: { path: string }) {
             </button>
           </Tip>
         </div>
-      </motion.nav>
+      </nav>
 
       {/* ── Mobile ──────────────────────────────────────────────── */}
       <div className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-line bg-side/95 px-4 backdrop-blur md:hidden">
@@ -136,26 +132,22 @@ export function SidebarView({ path }: { path: string }) {
         </button>
       </div>
 
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              key="scrim"
-              className="fixed inset-0 z-50 bg-black/60 md:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileOpen(false)}
-            />
-            <motion.nav
-              key="drawer"
-              aria-label="Main"
-              className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-side p-4 md:hidden"
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={spring}
-            >
+      <div
+        aria-hidden="true"
+        onClick={() => setMobileOpen(false)}
+        className={cn(
+          "fixed inset-0 z-50 bg-black/60 transition-opacity duration-200 md:hidden",
+          mobileOpen ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+      />
+      <nav
+        aria-label="Main"
+        inert={!mobileOpen}
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-side p-4 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] md:hidden",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
               <div className="mb-6 flex items-center justify-between">
                 <span className="flex items-center gap-2.5">
                   <Logo />
@@ -189,10 +181,7 @@ export function SidebarView({ path }: { path: string }) {
                 );
               })}
               <span className="mt-auto px-3 text-xs text-[#5b6675]">Sheet: NeetCode 150</span>
-            </motion.nav>
-          </>
-        )}
-      </AnimatePresence>
+      </nav>
     </>
   );
 }
@@ -218,17 +207,18 @@ function Logo() {
   );
 }
 
-/** Label that fades/slides in as the rail expands (Aceternity-style). */
+/** Label that fades/slides in as the rail expands (CSS transition, no animation library). */
 function Label({ open, className, children }: { open: boolean; className?: string; children: React.ReactNode }) {
   return (
-    <motion.span
-      initial={false}
-      animate={{ opacity: open ? 1 : 0, x: open ? 0 : -6 }}
-      transition={{ duration: 0.15 }}
+    <span
       aria-hidden={open ? undefined : true}
-      className={cn("whitespace-nowrap", !open && "pointer-events-none", className)}
+      className={cn(
+        "whitespace-nowrap transition-[opacity,translate] duration-150",
+        open ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-1.5 opacity-0",
+        className,
+      )}
     >
       {children}
-    </motion.span>
+    </span>
   );
 }

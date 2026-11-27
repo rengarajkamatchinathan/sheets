@@ -1,21 +1,18 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
 import MarkViewed from "@/components/problem/MarkViewed";
 import ProblemView from "@/components/problem/ProblemView";
-import { getPatternsForTopic, getProblem, getSnippets } from "@/lib/queries";
+import { loadProblemPage } from "@/lib/queries";
 import { SPLIT_COOKIE, parseSplit } from "@/lib/split";
 
 export default async function ProblemPage({ params }: PageProps<"/problems/[id]">) {
-  await connection();
   const { id } = await params;
   const n = Number(id);
   if (!Number.isInteger(n)) notFound();
-  const row = await getProblem(n);
+  const [row, jar] = await Promise.all([loadProblemPage(n), cookies()]);
   if (!row) notFound();
-  const { problem: p, topic, patternName } = row;
-  const [patterns, snippets, jar] = await Promise.all([getPatternsForTopic(topic.id), getSnippets(p.id), cookies()]);
+  const { problem: p, topic, patternName, patterns, snippets } = row;
   const split = parseSplit(jar.get(SPLIT_COOKIE)?.value);
 
   return (

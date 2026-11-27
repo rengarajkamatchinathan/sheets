@@ -1,1 +1,3 @@
-export { default } from "@/components/PageSkeleton";
+import { DashboardSkeleton } from "@/components/skeletons";
+
+export default DashboardSkeleton;

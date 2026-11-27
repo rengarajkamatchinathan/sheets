@@ -1,18 +1,11 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import IntentLink from "@/components/IntentLink";
 import { ArrowRight, Check, Plus, Sparkles, Star } from "lucide-react";
 import DifficultyGauge from "@/components/DifficultyGauge";
 import { Card, Ring } from "@/components/kit";
 import { addDays, dayKey, prettyDay, timeAgo, weekday } from "@/lib/dates";
-import {
-  getDifficultyStats,
-  getInProgress,
-  getNextTodo,
-  getRecentViewed,
-  getSolvedPerDay,
-  getStarred,
-  getTopicStats,
-} from "@/lib/queries";
+import { loadDashboard } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 const WEEKS = 26;
@@ -30,15 +23,10 @@ function shade(n: number) {
 
 export default async function Dashboard() {
   await connection();
-  const [topics, diffs, perDay, recent, inProgress, nextTodo, starred] = await Promise.all([
-    getTopicStats(),
-    getDifficultyStats(),
-    getSolvedPerDay(),
-    getRecentViewed(6),
-    getInProgress(4),
-    getNextTodo(),
-    getStarred(5),
-  ]);
+  const data = await loadDashboard();
+  const { topics, inProgress, nextTodo, starred, recent } = data;
+  const diffs = data.difficulty;
+  const perDay = new Map(data.perDay);
 
   // ── Activity heatmap: columns are weeks (Sun→Sat), ending with the current week.
   const today = dayKey();
@@ -147,7 +135,7 @@ export default async function Dashboard() {
       {/* Continue */}
       {next ? (
         <section aria-label="Continue" className="rounded-2xl bg-brand/[0.06] ring-1 ring-brand/15">
-          <Link href={`/problems/${next.id}`} className="group flex items-center gap-4 rounded-2xl p-4 transition-colors hover:bg-brand/[0.05]">
+          <IntentLink eager href={`/problems/${next.id}`} className="group flex items-center gap-4 rounded-2xl p-4 transition-colors hover:bg-brand/[0.05]">
             <span className="flex size-11 flex-none items-center justify-center rounded-xl bg-brand/15 text-brand-soft">
               <Sparkles className="size-5" />
             </span>
@@ -164,19 +152,19 @@ export default async function Dashboard() {
             <span className="hidden items-center gap-1.5 text-[13px] text-brand-soft sm:flex">
               Open <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
             </span>
-          </Link>
+          </IntentLink>
           {moreInProgress.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 border-t border-brand/10 px-4 py-3 text-xs">
               <span className="text-mute">Also in progress</span>
               {moreInProgress.map((p) => (
-                <Link
+                <IntentLink eager
                   key={p.id}
                   href={`/problems/${p.id}`}
                   className="inline-flex h-7 max-w-64 items-center gap-1.5 rounded-full bg-white/[0.04] px-2.5 text-soft hover:bg-white/[0.08] hover:text-ink"
                 >
                   <span className="size-1.5 flex-none rounded-full bg-medium" />
                   <span className="truncate">{p.title}</span>
-                </Link>
+                </IntentLink>
               ))}
             </div>
           )}
@@ -196,7 +184,7 @@ export default async function Dashboard() {
               const done = t.total > 0 && t.solved === t.total;
               return (
                 <li key={t.id}>
-                  <Link
+                  <Link prefetch
                     href={`/topics/${t.slug}`}
                     className="-mx-2 flex h-12 items-center gap-3 rounded-lg px-2 hover:bg-white/[0.03]"
                   >
@@ -297,7 +285,7 @@ function ProblemLine({
 }) {
   return (
     <li>
-      <Link href={`/problems/${id}`} className="-mx-2 flex h-11 items-center gap-3 rounded-lg px-2 hover:bg-white/[0.03]">
+      <IntentLink eager href={`/problems/${id}`} className="-mx-2 flex h-11 items-center gap-3 rounded-lg px-2 hover:bg-white/[0.03]">
         <span className="flex size-4 flex-none items-center justify-center">{icon}</span>
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-sm text-soft">{title}</span>
@@ -305,7 +293,7 @@ function ProblemLine({
         </span>
         <span className={cn("text-xs", DIFF_COLOR[difficulty])}>{DIFF_SHORT[difficulty]}</span>
         {right && <span className="w-16 text-right font-mono text-[11px] text-mute">{right}</span>}
-      </Link>
+      </IntentLink>
     </li>
   );
 }

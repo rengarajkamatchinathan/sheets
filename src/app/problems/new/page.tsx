@@ -1,13 +1,11 @@
 import Link from "next/link";
-import { connection } from "next/server";
 import { createProblem } from "@/app/actions";
 import { Card, btnPrimary, inputCls } from "@/components/kit";
-import { getAllTopics } from "@/lib/queries";
+import { loadTopics } from "@/lib/queries";
 
 export default async function NewProblemPage({ searchParams }: PageProps<"/problems/new">) {
-  await connection();
   const sp = await searchParams;
-  const topics = await getAllTopics();
+  const topics = await loadTopics();
   const preset = typeof sp.topic === "string" ? topics.find((t) => t.slug === sp.topic)?.id : undefined;
 
   return (

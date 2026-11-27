@@ -10,8 +10,26 @@ import { dsaTheme } from "./codeTheme";
 
 const CodeMirror = dynamic(() => import("@uiw/react-codemirror"), {
   ssr: false,
-  loading: () => <div className="h-full bg-[#0f1318]" />,
+  loading: () => null, // <StaticCode> covers the gap
 });
+
+/** Read-only look-alike of the editor: line numbers + monospace text, no highlighting. */
+function StaticCode({ code }: { code: string }) {
+  const lines = code.split("\n");
+  return (
+    <pre
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-10 m-0 overflow-hidden bg-[#0f1318] py-1 font-mono text-[13px] leading-[1.65] text-[#d4dce5]"
+    >
+      {lines.map((l, i) => (
+        <div key={i} className="flex">
+          <span className="w-[3.6em] flex-none pr-[1.6em] text-right text-[#3e4855] select-none">{i + 1}</span>
+          <span className="whitespace-pre">{l || " "}</span>
+        </div>
+      ))}
+    </pre>
+  );
+}
 
 export type Tab = {
   key: string;
@@ -73,6 +91,7 @@ export default function CodeTabs({
   const [activeKey, setActiveKey] = useState<string | null>(tabs[0]?.key ?? null);
   const [renaming, setRenaming] = useState<{ key: string; name: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [readyKey, setReadyKey] = useState<string | null>(null); // tab whose CodeMirror has mounted
   const [fmt, setFmt] = useState<{ busy: boolean; error: string | null }>({ busy: false, error: null });
   const stripRef = useRef<HTMLDivElement>(null);
 
@@ -255,19 +274,24 @@ export default function CodeTabs({
         }}
       >
         {active ? (
-          <CodeMirror
-            key={active.key}
-            value={active.code}
-            height="100%"
-            minHeight="400px"
-            theme={dsaTheme}
-            extensions={extensions}
-            placeholder="// Write your Java solution"
-            basicSetup={{ highlightActiveLine: true, foldGutter: true, autocompletion: true, tabSize: 4 }}
-            indentWithTab
-            onChange={(code) => update(active.key, { code })}
-            className="absolute inset-0 overflow-auto"
-          />
+          <>
+            {/* Plain-text stand-in (same font, gutter and spacing) until CodeMirror has loaded. */}
+            {readyKey !== active.key && <StaticCode code={active.code} />}
+            <CodeMirror
+              key={active.key}
+              value={active.code}
+              height="100%"
+              minHeight="400px"
+              theme={dsaTheme}
+              extensions={extensions}
+              placeholder="// Write your Java solution"
+              basicSetup={{ highlightActiveLine: true, foldGutter: true, autocompletion: true, tabSize: 4 }}
+              indentWithTab
+              onCreateEditor={() => setReadyKey(active.key)}
+              onChange={(code) => update(active.key, { code })}
+              className="absolute inset-0 overflow-auto"
+            />
+          </>
         ) : (
           <div className="flex h-full min-h-[400px] flex-col items-center justify-center gap-3 text-sm text-mute">
             No code yet

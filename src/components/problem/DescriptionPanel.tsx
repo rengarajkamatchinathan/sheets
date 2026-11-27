@@ -5,7 +5,7 @@ import { Check, Loader2, Pencil, RefreshCw } from "lucide-react";
 import { fetchDescription } from "@/app/actions";
 import type { FetchResult } from "@/lib/leetcode";
 import { cn } from "@/lib/utils";
-import NotesEditor from "./NotesEditor";
+import RichText from "./RichText";
 
 const isLeetCode = (url: string) => /^https?:\/\/(?:www\.)?leetcode\.(?:com|cn)\/problems\/[a-z0-9-]+/i.test(url);
 
@@ -117,7 +117,7 @@ export default function DescriptionPanel({
           )}
           {error && !empty && <p className="text-xs text-hard">{error}</p>}
           {(!empty || editing) && (
-            <NotesEditor
+            <RichText
               key={editorKey}
               initial={html}
               onChange={onChange}

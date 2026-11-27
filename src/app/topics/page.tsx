@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { connection } from "next/server";
+import IntentLink from "@/components/IntentLink";
 import { Check, LayoutGrid, List, Plus, Search } from "lucide-react";
 import { createTopic } from "@/app/actions";
 import FilterMenu from "@/components/FilterMenu";
 import { Ring, btnPrimary, inputCls } from "@/components/kit";
-import { getTopicStats, searchProblems } from "@/lib/queries";
+import { loadTopics, searchProblems, type TopicStat } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 const FILTERS = [
@@ -16,16 +16,16 @@ const FILTERS = [
 
 const DIFF_COLOR = { Easy: "text-easy", Medium: "text-medium", Hard: "text-hard" } as const;
 
-type TopicRow = Awaited<ReturnType<typeof getTopicStats>>[number];
+type TopicRow = TopicStat;
 
 export default async function TopicsPage({ searchParams }: PageProps<"/topics">) {
-  await connection();
+
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
   const filter = typeof sp.f === "string" ? sp.f : "all";
   const view = sp.view === "grid" ? "grid" : "list";
 
-  const [all, matches] = await Promise.all([getTopicStats(), q ? searchProblems(q) : Promise.resolve([])]);
+  const [all, matches] = await Promise.all([loadTopics(), q ? searchProblems(q) : Promise.resolve([])]);
   const totalSolved = all.reduce((a, t) => a + t.solved, 0);
   const total = all.reduce((a, t) => a + t.total, 0);
 
@@ -141,7 +141,7 @@ export default async function TopicsPage({ searchParams }: PageProps<"/topics">)
           <ul>
             {matches.map((m) => (
               <li key={m.id}>
-                <Link href={`/problems/${m.id}`} className="flex h-10 items-center gap-3 rounded-lg px-2 text-sm hover:bg-white/[0.025]">
+                <IntentLink href={`/problems/${m.id}`} className="flex h-10 items-center gap-3 rounded-lg px-2 text-sm hover:bg-white/[0.025]">
                   {m.status === "Solved" ? (
                     <Check className="size-3.5 flex-none text-easy" />
                   ) : (
@@ -152,7 +152,7 @@ export default async function TopicsPage({ searchParams }: PageProps<"/topics">)
                   <span className={cn("w-12 text-right text-xs", DIFF_COLOR[m.difficulty])}>
                     {m.difficulty === "Medium" ? "Med" : m.difficulty}
                   </span>
-                </Link>
+                </IntentLink>
               </li>
             ))}
           </ul>
@@ -195,7 +195,7 @@ function TopicList({ topics }: { topics: TopicRow[] }) {
         const done = t.total > 0 && t.solved === t.total;
         return (
           <li key={t.id}>
-            <Link
+            <Link prefetch
               href={`/topics/${t.slug}`}
               className="group flex min-h-14 items-center gap-3.5 rounded-xl bg-white/[0.02] px-3.5 transition-colors hover:bg-white/[0.045]"
             >
@@ -229,7 +229,7 @@ function TopicGrid({ topics }: { topics: TopicRow[] }) {
         const done = t.total > 0 && t.solved === t.total;
         return (
           <li key={t.id}>
-            <Link
+            <Link prefetch
               href={`/topics/${t.slug}`}
               className="flex h-full flex-col gap-4 rounded-xl bg-white/[0.02] p-4 transition-colors hover:bg-white/[0.045]"
             >

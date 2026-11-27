@@ -83,7 +83,8 @@ export default function NotesEditor({
     <div className={cn("notes-editor", !editable && "is-readonly", className)}>
       {editor && editable && <FormatBubble editor={editor} />}
       <EditorContent editor={editor} />
-      {!editor && <div className="min-h-80 animate-pulse rounded-lg bg-chip/40" />}
+      {/* Until Tiptap mounts, show the same content as static HTML (no blank flash). */}
+      {!editor && <div className="tiptap" dangerouslySetInnerHTML={{ __html: initial }} />}
     </div>
   );
 }
