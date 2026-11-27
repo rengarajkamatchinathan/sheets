@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import DifficultyGauge from "@/components/DifficultyGauge";
-import { Bar, Card, DIFF_HEX, btnPrimary } from "@/components/ui";
+import { Bar, Card, DIFF_HEX, btnPrimary } from "@/components/kit";
 import { addDays, dayKey, prettyDay, relativeDay, weekday } from "@/lib/dates";
 import { getDifficultyStats, getRecentSolved, getSolvedPerDay, getTopicStats } from "@/lib/queries";
 
@@ -132,7 +132,7 @@ export default async function Dashboard() {
             <ul>
               {recent.map((p) => (
                 <li key={p.id} className="border-t border-line">
-                  <Link href={`/problems/${p.id}`} className="flex items-center gap-3 py-2.5 hover:text-accent-soft">
+                  <Link href={`/problems/${p.id}`} className="flex items-center gap-3 py-2.5 hover:text-brand-soft">
                     <span className="h-2 w-2 flex-none rounded-full" style={{ background: DIFF_HEX[p.difficulty] }} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{p.title}</span>
@@ -151,13 +151,13 @@ export default async function Dashboard() {
         <Card className="px-6 py-5">
           <div className="mb-4 flex items-baseline justify-between">
             <h2 className="text-base font-semibold">Progress by topic</h2>
-            <Link href="/topics" className="text-[13px] font-semibold text-accent-soft hover:underline">
+            <Link href="/topics" className="text-[13px] font-semibold text-brand-soft hover:underline">
               All topics →
             </Link>
           </div>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-x-8 gap-y-3.5">
             {topics.map((t) => (
-              <Link key={t.id} href={`/topics/${t.slug}`} className="block hover:text-accent-soft">
+              <Link key={t.id} href={`/topics/${t.slug}`} className="block hover:text-brand-soft">
                 <div className="mb-1.5 flex justify-between text-[13px]">
                   <span className="font-medium">{t.name}</span>
                   <span className="font-mono text-mute">

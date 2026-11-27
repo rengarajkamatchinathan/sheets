@@ -42,7 +42,7 @@ export function SidebarView({ path }: { path: string }) {
       className="flex shrink-0 items-center gap-1 border-b border-line bg-side px-4 py-3 md:sticky md:top-0 md:h-screen md:w-60 md:flex-col md:items-stretch md:border-r md:border-b-0 md:py-6"
     >
       <Link href="/" className="mr-4 flex items-center gap-2.5 px-2 md:mr-0 md:mb-6">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent font-mono text-sm font-bold text-bg">{"{}"}</span>
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand font-mono text-sm font-bold text-bg">{"{}"}</span>
         <span className="text-[17px] font-bold tracking-tight">DSA Log</span>
       </Link>
       {NAV.map((n) => {

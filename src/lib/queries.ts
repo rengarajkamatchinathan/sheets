@@ -1,7 +1,7 @@
 import "server-only";
 import { asc, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { patterns, problems, topics } from "@/db/schema";
+import { patterns, problems, snippets, topics } from "@/db/schema";
 import { hasRealNotes } from "./template";
 import { TZ } from "./dates";
 
@@ -120,7 +120,7 @@ export async function getTopicBoard(topicId: number) {
         patternId: problems.patternId,
         tags: problems.tags,
         notes: problems.notes,
-        hasCode: sql<boolean>`length(trim(${problems.code})) > 0`,
+        hasCode: sql<boolean>`exists (select 1 from ${snippets} where ${snippets.problemId} = ${problems.id} and length(trim(${snippets.code})) > 0)`,
       })
       .from(problems)
       .where(eq(problems.topicId, topicId))
@@ -151,6 +151,14 @@ export async function getProblem(id: number) {
     .where(eq(problems.id, id))
     .limit(1);
   return row ?? null;
+}
+
+export async function getSnippets(problemId: number) {
+  return db
+    .select({ id: snippets.id, name: snippets.name, language: snippets.language, code: snippets.code })
+    .from(snippets)
+    .where(eq(snippets.problemId, problemId))
+    .orderBy(asc(snippets.sortOrder), asc(snippets.id));
 }
 
 export async function searchProblems(q: string, limit = 30) {

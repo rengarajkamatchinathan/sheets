@@ -2,7 +2,7 @@
 
 Track daily DSA practice: topics → problems → markdown notes + solution code, with a progress dashboard (Easy/Medium/Hard gauge, activity heatmap, per-topic progress).
 
-Stack: Next.js 16 (App Router, Server Actions) · Tailwind v4 · Drizzle ORM · Neon Postgres.
+Stack: Next.js 16 (App Router, Server Actions) · Tailwind v4 · shadcn/ui · Tiptap (notes) · CodeMirror (code) · Drizzle ORM · Neon Postgres.
 
 ## Setup
 
@@ -30,10 +30,12 @@ A problem counts toward the activity heatmap on the day its status first becomes
 
 ## Layout
 
-- `src/db/schema.ts` — `topics`, `problems` tables
+- `src/db/schema.ts` — `topics`, `patterns`, `problems`, `snippets` (code tabs) tables
 - `src/db/seed.ts` — NeetCode 150 seed
 - `src/lib/queries.ts` — dashboard/topic queries
 - `src/app/actions.ts` — server actions (create/update/delete)
 - `src/app/page.tsx` — dashboard
 - `src/app/topics/` — topic grid and topic detail table
-- `src/app/problems/` — problem notes/code editor, new problem form
+- `src/app/problems/` — problem page, new problem form
+- `src/components/problem/` — properties panel, Notion-style notes editor, VS Code-style code tabs (autosaves)
+- `src/components/ui/` — shadcn/ui components

@@ -53,8 +53,6 @@ export const problems = pgTable(
     status: statusEnum("status").notNull().default("Todo"),
     tags: text("tags").array().notNull().default([]),
     notes: text("notes").notNull().default(""),
-    code: text("code").notNull().default(""),
-    language: text("language").notNull().default("python"),
     timeComplexity: text("time_complexity").notNull().default(""),
     spaceComplexity: text("space_complexity").notNull().default(""),
     timeTakenMin: integer("time_taken_min"),
@@ -70,7 +68,26 @@ export const problems = pgTable(
   ],
 );
 
+/** One code tab on a problem page (a problem can have several solutions/variants). */
+export const snippets = pgTable(
+  "snippets",
+  {
+    id: serial("id").primaryKey(),
+    problemId: integer("problem_id")
+      .notNull()
+      .references(() => problems.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    language: text("language").notNull().default("python"),
+    code: text("code").notNull().default(""),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("snippets_problem_idx").on(t.problemId)],
+);
+
 export type Topic = typeof topics.$inferSelect;
+export type Snippet = typeof snippets.$inferSelect;
 export type Pattern = typeof patterns.$inferSelect;
 export type Problem = typeof problems.$inferSelect;
 export type Difficulty = (typeof difficultyEnum.enumValues)[number];

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { createTopic } from "@/app/actions";
-import { Bar, Card, DIFF_TEXT, StatusPill, btnGhost, btnPrimary, inputCls } from "@/components/ui";
+import { Bar, Card, DIFF_TEXT, StatusPill, btnGhost, btnPrimary, inputCls } from "@/components/kit";
 import { getTopicStats, searchProblems } from "@/lib/queries";
 
 const FILTERS = [
@@ -78,7 +78,7 @@ export default async function TopicsPage({ searchParams }: PageProps<"/topics">)
             href={href(f.key)}
             aria-current={filter === f.key ? "true" : undefined}
             className={`inline-flex min-h-9 items-center rounded-full border px-3.5 text-[13px] ${
-              filter === f.key ? "border-accent bg-[#12302d] font-semibold text-accent-soft" : "border-line2 text-mute hover:text-ink"
+              filter === f.key ? "border-brand bg-[#12302d] font-semibold text-brand-soft" : "border-line2 text-mute hover:text-ink"
             }`}
           >
             {f.label}

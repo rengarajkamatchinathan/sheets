@@ -1,10 +1,10 @@
 "use server";
 
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { patterns, problems, topics, type Difficulty, type Status } from "@/db/schema";
+import { patterns, problems, snippets, topics, type Difficulty, type Status } from "@/db/schema";
 import { slugify } from "@/lib/slug";
 import { NOTES_TEMPLATE } from "@/lib/template";
 
@@ -153,15 +153,27 @@ export type ProblemUpdate = {
   patternId: number | null;
   starred: boolean;
   tags: string[];
-  notes: string;
-  code: string;
-  language: string;
+  notes: string; // HTML from the rich-text editor
   timeComplexity: string;
   spaceComplexity: string;
   timeTakenMin: number | null;
 };
 
-export async function updateProblem(id: number, data: ProblemUpdate) {
+export type SnippetInput = {
+  key: string; // client-side identity, so new tabs can be matched to their new DB ids
+  id: number | null; // null = not saved yet
+  name: string;
+  language: string;
+  code: string;
+};
+
+const LANGUAGES = ["python", "java", "cpp", "javascript", "typescript", "go", "plaintext"];
+
+/**
+ * Saves the problem's fields, notes and its full list of code tabs (in tab order).
+ * Tabs missing from `tabs` are deleted. Returns the DB id for every tab key.
+ */
+export async function updateProblem(id: number, data: ProblemUpdate, tabs: SnippetInput[]) {
   if (!Number.isInteger(id)) throw new Error("Bad id");
   if (!DIFFS.includes(data.difficulty) || !STATUSES.includes(data.status)) throw new Error("Bad value");
   const [current] = await db
@@ -172,6 +184,7 @@ export async function updateProblem(id: number, data: ProblemUpdate) {
   await assertPatternInTopic(data.patternId, current.topicId);
 
   const solvedAt = nextSolvedAt(data.status, current.solvedAt);
+  const now = new Date();
   await db
     .update(problems)
     .set({
@@ -182,19 +195,44 @@ export async function updateProblem(id: number, data: ProblemUpdate) {
       status: data.status,
       patternId: data.patternId,
       starred: data.starred,
-      tags: data.tags.map((t) => t.trim()).filter(Boolean),
+      tags: [...new Set(data.tags.map((t) => t.trim()).filter(Boolean))],
       notes: data.notes,
-      code: data.code,
-      language: data.language,
       timeComplexity: data.timeComplexity.trim(),
       spaceComplexity: data.spaceComplexity.trim(),
       timeTakenMin: data.timeTakenMin,
       solvedAt,
-      updatedAt: new Date(),
+      updatedAt: now,
     })
     .where(eq(problems.id, id));
+
+  // Sync code tabs: delete removed ones, update existing, insert new.
+  const existing = new Set(
+    (await db.select({ id: snippets.id }).from(snippets).where(eq(snippets.problemId, id))).map((s) => s.id),
+  );
+  const keep = new Set(tabs.map((t) => t.id).filter((x): x is number => x != null && existing.has(x)));
+  const removed = [...existing].filter((x) => !keep.has(x));
+  if (removed.length) await db.delete(snippets).where(and(eq(snippets.problemId, id), inArray(snippets.id, removed)));
+
+  const ids: Record<string, number> = {};
+  for (const [i, t] of tabs.entries()) {
+    const values = {
+      name: t.name.trim() || "untitled",
+      language: LANGUAGES.includes(t.language) ? t.language : "plaintext",
+      code: t.code,
+      sortOrder: i,
+      updatedAt: now,
+    };
+    if (t.id != null && keep.has(t.id)) {
+      await db.update(snippets).set(values).where(eq(snippets.id, t.id));
+      ids[t.key] = t.id;
+    } else {
+      const [row] = await db.insert(snippets).values({ ...values, problemId: id }).returning({ id: snippets.id });
+      ids[t.key] = row.id;
+    }
+  }
+
   refresh();
-  return { solvedAt: solvedAt?.toISOString() ?? null };
+  return { solvedAt: solvedAt?.toISOString() ?? null, ids };
 }
 
 export async function setStatus(id: number, status: Status) {

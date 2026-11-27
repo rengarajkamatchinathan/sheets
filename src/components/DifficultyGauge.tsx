@@ -1,5 +1,5 @@
 import type { Difficulty } from "@/db/schema";
-import { DIFF_HEX } from "./ui";
+import { DIFF_HEX } from "./kit";
 
 type Stat = { difficulty: Difficulty; total: number; solved: number; attempted: number };
 

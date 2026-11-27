@@ -51,10 +51,10 @@ export function Card({ className = "", children }: { className?: string; childre
 }
 
 export const inputCls =
-  "min-h-11 w-full rounded-lg border border-line2 bg-side px-3 text-sm text-ink placeholder:text-mute focus:border-accent focus:outline-none";
+  "min-h-11 w-full rounded-lg border border-line2 bg-side px-3 text-sm text-ink placeholder:text-mute focus:border-brand focus:outline-none";
 
 export const btnPrimary =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-bold text-accent-ink hover:bg-accent-soft disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-bold text-brand-ink hover:bg-brand-soft disabled:opacity-60";
 
 export const btnGhost =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line2 px-4 text-sm font-semibold text-ink hover:bg-chip";

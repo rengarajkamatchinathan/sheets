@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { createProblem, deleteTopic, updateTopic } from "@/app/actions";
 import TopicBoard from "@/components/TopicBoard";
-import { Bar, btnGhost, btnPrimary, inputCls } from "@/components/ui";
+import { Bar, btnGhost, btnPrimary, inputCls } from "@/components/kit";
 import { getTopicBoard, getTopicBySlug } from "@/lib/queries";
 
 export default async function TopicPage({ params }: PageProps<"/topics/[slug]">) {
@@ -20,7 +20,7 @@ export default async function TopicPage({ params }: PageProps<"/topics/[slug]">)
   return (
     <div className="flex flex-col gap-6">
       <nav aria-label="Breadcrumb" className="text-[13px] text-mute">
-        <Link href="/topics" className="text-accent-soft hover:underline">
+        <Link href="/topics" className="text-brand-soft hover:underline">
           Topics
         </Link>{" "}
         / {topic.name}

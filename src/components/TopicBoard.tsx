@@ -14,7 +14,7 @@ import {
 } from "@/app/actions";
 import type { Difficulty, Status } from "@/db/schema";
 import type { BoardProblem } from "@/lib/queries";
-import { Bar, DIFF_TEXT, inputCls } from "./ui";
+import { Bar, DIFF_TEXT, inputCls } from "./kit";
 
 type PatternRef = { id: number; name: string };
 type Group = { key: string; id: number | null; name: string };
@@ -174,7 +174,7 @@ export default function TopicBoard({
           return (
             <section
               key={g.key}
-              className={`rounded-2xl border bg-panel transition-colors ${dropHere && dragId != null ? "border-accent/60" : "border-line"}`}
+              className={`rounded-2xl border bg-panel transition-colors ${dropHere && dragId != null ? "border-brand/60" : "border-line"}`}
               onDragOver={(e) => {
                 if (dragId == null) return;
                 e.preventDefault();
@@ -207,7 +207,7 @@ export default function TopicBoard({
                       onKeyDown={(e) => e.key === "Escape" && setRenaming(null)}
                       className={`${inputCls} min-h-9 max-w-sm`}
                     />
-                    <button className="min-h-9 rounded-md bg-accent px-3 text-xs font-bold text-accent-ink">Save</button>
+                    <button className="min-h-9 rounded-md bg-brand px-3 text-xs font-bold text-brand-ink">Save</button>
                     <button type="button" onClick={() => setRenaming(null)} className="min-h-9 px-2 text-xs text-mute hover:text-ink">
                       Cancel
                     </button>
@@ -298,7 +298,7 @@ export default function TopicBoard({
                           }}
                           className={`group relative border-t border-line first:border-t-0 ${dragId === p.id ? "opacity-40" : ""}`}
                         >
-                          {showLine && <span className="absolute inset-x-2 -top-px z-10 h-0.5 rounded bg-accent" />}
+                          {showLine && <span className="absolute inset-x-2 -top-px z-10 h-0.5 rounded bg-brand" />}
                           <ProblemRow
                             p={p}
                             menuOpen={menu === `p:${p.id}`}
@@ -322,7 +322,7 @@ export default function TopicBoard({
                     })}
                     {dragId != null && dropHere && drop?.beforeId == null && rows.length > 0 && (
                       <li aria-hidden="true" className="relative h-0">
-                        <span className="absolute inset-x-2 -top-px h-0.5 rounded bg-accent" />
+                        <span className="absolute inset-x-2 -top-px h-0.5 rounded bg-brand" />
                       </li>
                     )}
                   </ul>
@@ -352,7 +352,7 @@ export default function TopicBoard({
             onKeyDown={(e) => e.key === "Escape" && setAdding(null)}
             className={`${inputCls} max-w-sm flex-1`}
           />
-          <button className="min-h-11 rounded-lg bg-accent px-4 text-sm font-bold text-accent-ink">Add pattern</button>
+          <button className="min-h-11 rounded-lg bg-brand px-4 text-sm font-bold text-brand-ink">Add pattern</button>
           <button type="button" onClick={() => setAdding(null)} className="min-h-11 px-3 text-sm text-mute hover:text-ink">
             Cancel
           </button>
@@ -361,7 +361,7 @@ export default function TopicBoard({
         <button
           type="button"
           onClick={() => setAdding("")}
-          className="min-h-12 rounded-2xl border border-dashed border-line2 text-sm font-semibold text-mute hover:border-accent hover:text-accent-soft"
+          className="min-h-12 rounded-2xl border border-dashed border-line2 text-sm font-semibold text-mute hover:border-brand hover:text-brand-soft"
         >
           + Add pattern
         </button>
@@ -432,7 +432,7 @@ function ProblemRow({
       <Link
         href={`/problems/${p.id}`}
         draggable={false}
-        className={`min-w-0 flex-1 truncate text-[15px] hover:text-accent-soft ${solved ? "text-mute" : "text-ink"}`}
+        className={`min-w-0 flex-1 truncate text-[15px] hover:text-brand-soft ${solved ? "text-mute" : "text-ink"}`}
       >
         {p.title}
       </Link>
@@ -509,7 +509,7 @@ function IconLink({ href, lit, label, children }: { href: string; lit: boolean; 
       draggable={false}
       aria-label={label}
       title={label}
-      className={`flex h-10 w-10 items-center justify-center rounded-md hover:bg-chip ${lit ? "text-accent-soft" : "text-[#4a5462] hover:text-mute"}`}
+      className={`flex h-10 w-10 items-center justify-center rounded-md hover:bg-chip ${lit ? "text-brand-soft" : "text-[#4a5462] hover:text-mute"}`}
     >
       <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         {children}
@@ -589,7 +589,7 @@ function Chips<T extends string>({
           aria-pressed={value === v}
           onClick={() => onChange(v)}
           className={`inline-flex min-h-8 items-center rounded-full border px-3 ${
-            value === v ? "border-accent bg-[#12302d] font-semibold text-accent-soft" : "border-line2 text-mute hover:text-ink"
+            value === v ? "border-brand bg-[#12302d] font-semibold text-brand-soft" : "border-line2 text-mute hover:text-ink"
           }`}
         >
           {v}

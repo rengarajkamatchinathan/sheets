@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { createProblem } from "@/app/actions";
-import { Card, btnPrimary, inputCls } from "@/components/ui";
+import { Card, btnPrimary, inputCls } from "@/components/kit";
 import { getAllTopics } from "@/lib/queries";
 
 export default async function NewProblemPage({ searchParams }: PageProps<"/problems/new">) {
@@ -13,7 +13,7 @@ export default async function NewProblemPage({ searchParams }: PageProps<"/probl
   return (
     <div className="flex max-w-xl flex-col gap-6">
       <nav aria-label="Breadcrumb" className="text-[13px] text-mute">
-        <Link href="/" className="text-accent-soft hover:underline">
+        <Link href="/" className="text-brand-soft hover:underline">
           Dashboard
         </Link>{" "}
         / Log a problem
