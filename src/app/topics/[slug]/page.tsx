@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import IntentLink from "@/components/IntentLink";
-import { ArrowRight, MoreHorizontal, Plus, Sparkles } from "lucide-react";
-import { createProblem, deleteTopic, updateTopic } from "@/app/actions";
+import { ArrowRight, MoreHorizontal, Sparkles } from "lucide-react";
+import { deleteTopic, updateTopic } from "@/app/actions";
+import { NewProblemDialog } from "@/components/NewProblem";
 import TopicBoard from "@/components/TopicBoard";
 import { Ring, btnPrimary, inputCls } from "@/components/kit";
-import { loadTopicPage } from "@/lib/queries";
+import { loadTopicChoices, loadTopicPage } from "@/lib/queries";
 
 const quietBtn =
   "flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-md px-2 text-[13px] text-mute hover:bg-white/5 hover:text-ink [&::-webkit-details-marker]:hidden";
@@ -14,7 +15,7 @@ const popover = "absolute right-0 z-40 mt-1 flex w-80 flex-col gap-3 rounded-xl 
 export default async function TopicPage({ params }: PageProps<"/topics/[slug]">) {
 
   const { slug } = await params;
-  const board = await loadTopicPage(slug);
+  const [board, choices] = await Promise.all([loadTopicPage(slug), loadTopicChoices()]);
   const topic = board.topic;
   if (!topic) notFound();
 
@@ -44,42 +45,7 @@ export default async function TopicPage({ params }: PageProps<"/topics/[slug]">)
         <header className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2">
           <h1 className="text-2xl font-semibold tracking-tight">{topic.name}</h1>
           <div className="ml-auto flex items-center gap-1">
-            <details className="relative">
-              <summary className={quietBtn}>
-                <Plus className="size-4" /> Problem
-              </summary>
-              <form action={createProblem} className={popover}>
-                <input type="hidden" name="topicId" value={topic.id} />
-                <label className="text-xs text-mute">
-                  Title
-                  <input name="title" required className={`${inputCls} mt-1`} />
-                </label>
-                <label className="text-xs text-mute">
-                  Pattern
-                  <select name="patternId" defaultValue="" className={`${inputCls} mt-1`}>
-                    <option value="">Unsorted</option>
-                    {board.patterns.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="text-xs text-mute">
-                  Link
-                  <input name="url" type="url" placeholder="https://leetcode.com/problems/…" className={`${inputCls} mt-1`} />
-                </label>
-                <label className="text-xs text-mute">
-                  Difficulty
-                  <select name="difficulty" defaultValue="Medium" className={`${inputCls} mt-1`}>
-                    <option>Easy</option>
-                    <option>Medium</option>
-                    <option>Hard</option>
-                  </select>
-                </label>
-                <button className={btnPrimary}>Add and open</button>
-              </form>
-            </details>
+            <NewProblemDialog topics={choices} fixedTopicId={topic.id} />
             <details className="relative">
               <summary className={quietBtn} aria-label="Topic options">
                 <MoreHorizontal className="size-4" />
@@ -151,7 +117,7 @@ export default async function TopicPage({ params }: PageProps<"/topics/[slug]">)
           </IntentLink>
         ) : (
           <div className="flex items-center gap-4 rounded-xl bg-white/[0.02] p-4 text-sm text-mute">
-            {all.length ? "Everything here is solved. Nice work." : "No problems yet — add one with + Problem."}
+            {all.length ? "Everything here is solved. Nice work." : "No problems yet — add one with + Problem above."}
           </div>
         )}
       </section>

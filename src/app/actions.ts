@@ -6,7 +6,7 @@ import { refresh, revalidateTag, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { patterns, problems, snippets, topics, type Difficulty, type Status } from "@/db/schema";
-import { fetchLeetCodeDescription, type FetchResult } from "@/lib/leetcode";
+import { fetchLeetCodeDescription, fetchLeetCodeMeta, leetcodeSlug, type FetchResult } from "@/lib/leetcode";
 import { cleanDescription, cleanRichText } from "@/lib/sanitize";
 import { slugify } from "@/lib/slug";
 import { TAGS } from "@/lib/tags";
@@ -126,17 +126,86 @@ export async function shiftPattern(id: number, dir: -1 | 1) {
   [list[i], list[j]] = [list[j], list[i]];
   const [first, ...rest] = list.map((x, k) => db.update(patterns).set({ sortOrder: k }).where(eq(patterns.id, x.id)));
   await db.batch([first, ...rest]);
-  changedAndRefresh(TAGS.topic(list[0].topicId));
+  changedAndRefresh(TAGS.stats, TAGS.topic(list[0].topicId));
 }
 
 // ── Problems ────────────────────────────────────────────────────────────
 
-export async function createProblem(formData: FormData) {
-  const topicId = toInt(str(formData.get("topicId")));
-  const title = str(formData.get("title"));
-  if (!topicId || !title) return;
-  const diff = str(formData.get("difficulty")) as Difficulty;
-  const patternId = toInt(str(formData.get("patternId")));
+export type LinkLookup =
+  | {
+      ok: true;
+      title: string;
+      difficulty: Difficulty;
+      number: number | null;
+      premium: boolean;
+      /** Already in the sheet (same LeetCode problem). */
+      existing: { id: number; title: string; topicName: string } | null;
+    }
+  | { ok: false; reason: "not-leetcode" | "not-found" | "network" };
+
+/**
+ * For the "new problem" dialog: looks up a LeetCode link (number, title, difficulty)
+ * and checks whether that problem is already in the sheet — in parallel.
+ */
+export async function lookupProblemLink(url: string): Promise<LinkLookup> {
+  const slug = leetcodeSlug(url.trim());
+  if (!slug) return { ok: false, reason: "not-leetcode" };
+  const [meta, dupes] = await Promise.all([
+    fetchLeetCodeMeta(url.trim()),
+    db
+      .select({ id: problems.id, title: problems.title, topicName: topics.name })
+      .from(problems)
+      .innerJoin(topics, eq(problems.topicId, topics.id))
+      .where(sql`${problems.url} ~* ${`leetcode\\.(com|cn)/problems/${slug}(/|$|\\?)`}`)
+      .limit(1),
+  ]);
+  if (!meta.ok) return meta;
+  return {
+    ok: true,
+    title: meta.title,
+    difficulty: meta.difficulty,
+    number: meta.number,
+    premium: meta.premium,
+    existing: dupes[0] ?? null,
+  };
+}
+
+export type NewProblemInput = {
+  topicId: number;
+  title: string;
+  url: string;
+  difficulty: Difficulty;
+  lcNumber: number | null;
+  /** An existing pattern of this topic, or null for Unsorted. Ignored if `newPatternName` is set. */
+  patternId: number | null;
+  /** Create this pattern (in the topic) and file the problem under it. */
+  newPatternName?: string;
+};
+
+/**
+ * Creates a problem (optionally with a brand-new pattern) and returns its id.
+ * The caller decides whether to open it or keep adding; the current page refreshes.
+ */
+export async function createProblem(input: NewProblemInput): Promise<{ id: number }> {
+  const topicId = Number(input.topicId);
+  const title = input.title.trim();
+  if (!Number.isInteger(topicId) || !title) throw new Error("Topic and title are required");
+  const difficulty = DIFFS.includes(input.difficulty) ? input.difficulty : "Medium";
+
+  let patternId: number | null = input.patternId;
+  const newName = input.newPatternName?.trim();
+  if (newName) {
+    const [p] = await db
+      .insert(patterns)
+      .values({
+        topicId,
+        name: newName,
+        sortOrder: sql`(select coalesce(max(${patterns.sortOrder}), -1) + 1 from ${patterns} where ${patterns.topicId} = ${topicId})`,
+      })
+      .returning({ id: patterns.id });
+    patternId = p.id;
+  }
+
   const [row] = await db
     .insert(problems)
     .values({
@@ -146,17 +215,17 @@ export async function createProblem(formData: FormData) {
         patternId == null
           ? null
           : sql`(select ${patterns.id} from ${patterns} where ${patterns.id} = ${patternId} and ${patterns.topicId} = ${topicId})`,
-      title,
-      url: str(formData.get("url")),
-      difficulty: DIFFS.includes(diff) ? diff : "Medium",
-      lcNumber: toInt(str(formData.get("lcNumber"))),
-      tags: str(formData.get("tags")).split(",").map((t) => t.trim()).filter(Boolean),
+      title: title.slice(0, 200),
+      url: input.url.trim(),
+      difficulty,
+      lcNumber: Number.isInteger(input.lcNumber) ? input.lcNumber : null,
       notes: NOTES_TEMPLATE,
       sortOrder: sql`(select coalesce(max(${problems.sortOrder}), -1) + 1 from ${problems} where ${problems.topicId} = ${topicId})`,
     })
     .returning({ id: problems.id });
-  for (const t of [TAGS.stats, TAGS.topic(topicId)]) updateTag(t);
-  redirect(`/problems/${row.id}`);
+
+  changedAndRefresh(TAGS.stats, TAGS.topic(topicId));
+  return { id: row.id };
 }
 
 export type ProblemUpdate = {

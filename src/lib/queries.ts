@@ -148,6 +148,23 @@ export async function loadTopics() {
   return topicStatsQ();
 }
 
+export type TopicChoice = { id: number; name: string; slug: string; patterns: { id: number; name: string }[] };
+
+/** Every topic with its patterns (for the "new problem" dialog's pickers). */
+export async function loadTopicChoices(): Promise<TopicChoice[]> {
+  "use cache";
+  cacheLife(CACHE_FOREVER);
+  cacheTag(TAGS.stats);
+  const [ts, ps] = await db.batch([
+    db.select({ id: topics.id, name: topics.name, slug: topics.slug }).from(topics).orderBy(asc(topics.sortOrder), asc(topics.id)),
+    db
+      .select({ id: patterns.id, name: patterns.name, topicId: patterns.topicId })
+      .from(patterns)
+      .orderBy(asc(patterns.sortOrder), asc(patterns.id)),
+  ]);
+  return ts.map((t) => ({ ...t, patterns: ps.filter((p) => p.topicId === t.id).map(({ id, name }) => ({ id, name })) }));
+}
+
 /** Topic page: topic + patterns + board in one round trip (all keyed by slug). */
 export async function loadTopicPage(slug: string) {
   "use cache";

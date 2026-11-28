@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import IntentLink from "@/components/IntentLink";
-import { ArrowRight, Check, Plus, Sparkles, Star } from "lucide-react";
+import { ArrowRight, Check, Sparkles, Star } from "lucide-react";
 import DifficultyGauge from "@/components/DifficultyGauge";
-import { Card, Ring } from "@/components/kit";
+import { Card } from "@/components/kit";
 import { addDays, dayKey, prettyDay, timeAgo, weekday } from "@/lib/dates";
-import { loadDashboard } from "@/lib/queries";
+import { loadDashboard, loadTopicChoices } from "@/lib/queries";
+import { NewProblemDialog } from "@/components/NewProblem";
 import { cn } from "@/lib/utils";
 
 const WEEKS = 26;
@@ -23,8 +24,8 @@ function shade(n: number) {
 
 export default async function Dashboard() {
   await connection();
-  const data = await loadDashboard();
-  const { topics, inProgress, nextTodo, starred, recent } = data;
+  const [data, choices] = await Promise.all([loadDashboard(), loadTopicChoices()]);
+  const { inProgress, nextTodo, starred, recent } = data;
   const diffs = data.difficulty;
   const perDay = new Map(data.perDay);
 
@@ -55,11 +56,6 @@ export default async function Dashboard() {
   const next = inProgress[0] ?? nextTodo;
   const moreInProgress = inProgress.slice(1);
 
-  // ── Topics: started-but-unfinished first, then untouched, then completed.
-  const rank = (t: (typeof topics)[number]) => (t.total > 0 && t.solved === t.total ? 2 : t.solved > 0 ? 0 : 1);
-  const topicList = [...topics].sort((a, b) => rank(a) - rank(b)).slice(0, 8);
-  const completedTopics = topics.filter((t) => t.total > 0 && t.solved === t.total).length;
-
   const dateLabel = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
     day: "numeric",
@@ -74,12 +70,7 @@ export default async function Dashboard() {
           <div className="text-[13px] text-mute">{dateLabel}</div>
           <h1 className="mt-0.5 text-2xl font-semibold tracking-tight">Dashboard</h1>
         </div>
-        <Link
-          href="/problems/new"
-          className="ml-auto flex h-8 items-center gap-1.5 rounded-md px-2 text-[13px] text-mute hover:bg-white/5 hover:text-ink"
-        >
-          <Plus className="size-4" /> Log a problem
-        </Link>
+        <NewProblemDialog topics={choices} label="Log a problem" className="ml-auto" />
       </header>
 
       {/* Hero: difficulty gauge + activity */}
@@ -176,38 +167,7 @@ export default async function Dashboard() {
       )}
 
       {/* Lists */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-        <Card className="p-5">
-          <SectionHead title="Topics" meta={`${completedTopics}/${topics.length} complete`} href="/topics" link="All topics" />
-          <ul className="flex flex-col">
-            {topicList.map((t) => {
-              const done = t.total > 0 && t.solved === t.total;
-              return (
-                <li key={t.id}>
-                  <Link prefetch
-                    href={`/topics/${t.slug}`}
-                    className="-mx-2 flex h-12 items-center gap-3 rounded-lg px-2 hover:bg-white/[0.03]"
-                  >
-                    <Ring value={t.solved} max={t.total} size={26} stroke={3}>
-                      {done && <Check className="size-3 text-easy" strokeWidth={3} />}
-                    </Ring>
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate text-sm text-ink">{t.name}</span>
-                      <span className="text-[11px] text-mute">
-                        {done ? "Complete" : t.total === 0 ? "Empty" : `${t.total - t.solved} to go`}
-                      </span>
-                    </span>
-                    <span className="font-mono text-xs text-mute">
-                      {t.solved}/{t.total}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </Card>
-
-        <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Card className="p-5">
             <SectionHead title="Recent" />
             {recent.length === 0 ? (
@@ -248,7 +208,6 @@ export default async function Dashboard() {
               </ul>
             )}
           </Card>
-        </div>
       </div>
     </div>
   );
