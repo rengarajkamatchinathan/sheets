@@ -38,7 +38,8 @@ export default function App() {
           <Sidebar />
           <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto px-5 py-6 md:px-10 md:py-8">
             <ScrollToTop target={mainRef} />
-            <div className="mx-auto w-full">
+            {/* #page: moved by the swipe-navigation gesture (SwipeNav). */}
+            <div id="page" className="mx-auto w-full">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/topics" element={<TopicsPage />} />
