@@ -44,7 +44,7 @@ function CircleHalfIcon() {
 }
 
 const chip =
-  "inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-[13px] hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none";
+  "inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-[13px] hover:bg-fg/5 focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none";
 
 /** One quiet line of chips under the title: status · difficulty · pattern · link. */
 export default function Properties({
@@ -99,7 +99,7 @@ export default function Properties({
 }
 
 function Dot() {
-  return <span aria-hidden="true" className="px-0.5 text-[#3a4350]">·</span>;
+  return <span aria-hidden="true" className="px-0.5 text-dim">·</span>;
 }
 
 function Pick({
@@ -185,7 +185,7 @@ function LinkChip({ url, onChange }: { url: string; onChange: (u: string) => voi
           rel="noreferrer"
           aria-label="Open problem in new tab"
           title="Open problem"
-          className="flex size-7 items-center justify-center rounded-md text-mute hover:bg-white/5 hover:text-brand-soft"
+          className="flex size-7 items-center justify-center rounded-md text-mute hover:bg-fg/5 hover:text-brand-soft"
         >
           <ExternalLink className="size-3.5" />
         </a>

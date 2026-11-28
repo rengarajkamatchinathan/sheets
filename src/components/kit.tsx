@@ -7,20 +7,20 @@ export const DIFF_TEXT: Record<Difficulty, string> = {
 };
 
 export const DIFF_HEX: Record<Difficulty, string> = {
-  Easy: "#4ade80",
-  Medium: "#fbbf24",
-  Hard: "#f87171",
+  Easy: "var(--color-easy)",
+  Medium: "var(--color-medium)",
+  Hard: "var(--color-hard)",
 };
 
 const DIFF_PILL: Record<Difficulty, string> = {
-  Easy: "text-easy bg-[#12291a]",
-  Medium: "text-medium bg-[#2b2310]",
-  Hard: "text-hard bg-[#2c1416]",
+  Easy: "text-easy bg-easy-bg",
+  Medium: "text-medium bg-medium-bg",
+  Hard: "text-hard bg-hard-bg",
 };
 
 const STATUS_PILL: Record<Status, string> = {
-  Solved: "text-easy bg-[#12291a]",
-  Attempted: "text-medium bg-[#2b2310]",
+  Solved: "text-easy bg-easy-bg",
+  Attempted: "text-medium bg-medium-bg",
   Todo: "text-mute bg-chip",
 };
 
@@ -38,7 +38,7 @@ export function Tag({ children }: { children: React.ReactNode }) {
 
 export function Bar({ value, max, color }: { value: number; max: number; color?: string }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-  const fill = color ?? (pct === 100 ? "#4ade80" : "#2dd4bf");
+  const fill = color ?? (pct === 100 ? "var(--color-easy)" : "var(--color-brand)");
   return (
     <div className="h-1.5 overflow-hidden rounded-full bg-line" role="progressbar" aria-valuenow={value} aria-valuemin={0} aria-valuemax={max}>
       <div className="h-full rounded-full" style={{ width: `${pct}%`, background: fill }} />
@@ -47,7 +47,7 @@ export function Bar({ value, max, color }: { value: number; max: number; color?:
 }
 
 export function Card({ className = "", children }: { className?: string; children: React.ReactNode }) {
-  return <section className={`rounded-2xl bg-white/[0.02] ${className}`}>{children}</section>;
+  return <section className={`rounded-2xl bg-fg/[0.02] ${className}`}>{children}</section>;
 }
 
 export const inputCls =
@@ -82,14 +82,14 @@ export function Ring({
   return (
     <span className="relative inline-flex flex-none items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : true}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#232a34" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" style={{ stroke: "var(--color-line)" }} strokeWidth={stroke} />
         {frac > 0 && (
           <circle
             cx={size / 2}
             cy={size / 2}
             r={r}
             fill="none"
-            stroke={done ? "#4ade80" : "#2dd4bf"}
+            style={{ stroke: done ? "var(--color-easy)" : "var(--color-brand)" }}
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={`${C * frac} ${C}`}
@@ -105,7 +105,7 @@ export function Ring({
 /** One dot per problem, coloured by status — makes a group read as a small, finite set. */
 export function StatusDots({ statuses, max = 12 }: { statuses: ("Todo" | "Attempted" | "Solved")[]; max?: number }) {
   const shown = statuses.slice(0, max);
-  const color = { Solved: "#4ade80", Attempted: "#fbbf24", Todo: "#2e3744" } as const;
+  const color = { Solved: "var(--color-easy)", Attempted: "var(--color-medium)", Todo: "var(--color-line2)" } as const;
   return (
     <span className="flex items-center gap-1" aria-hidden="true">
       {shown.map((s, i) => (

@@ -114,7 +114,7 @@ function FormatBubble({ editor }: { editor: Editor }) {
     <BubbleMenu
       editor={editor}
       options={{ placement: "top", offset: 8 }}
-      className="flex items-center gap-0.5 rounded-lg border border-line2 bg-[#1c222b] p-1 shadow-2xl"
+      className="flex items-center gap-0.5 rounded-lg border border-line2 bg-pop p-1 shadow-2xl"
     >
       <Btn label="Text" active={s.p} onClick={() => chain().setParagraph().run()}>
         <Pilcrow />
@@ -169,7 +169,7 @@ function Btn({ label, active, onClick, children }: { label: string; active: bool
       onClick={onClick}
       className={cn(
         "flex h-8 w-8 items-center justify-center rounded-md [&_svg]:size-4",
-        active ? "bg-brand/15 text-brand-soft" : "text-soft hover:bg-white/5 hover:text-ink",
+        active ? "bg-brand/15 text-brand-soft" : "text-soft hover:bg-fg/5 hover:text-ink",
       )}
     >
       {children}

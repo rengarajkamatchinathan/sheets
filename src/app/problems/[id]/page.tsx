@@ -23,13 +23,13 @@ export default async function ProblemPage({ params }: PageProps<"/problems/[id]"
         <Link href="/topics" className="hover:text-ink">
           Topics
         </Link>
-        <span className="mx-1.5 text-[#4a5462]">/</span>
+        <span className="mx-1.5 text-dim">/</span>
         <Link href={`/topics/${topic.slug}`} className="hover:text-ink">
           {topic.name}
         </Link>
         {patternName && (
           <>
-            <span className="mx-1.5 text-[#4a5462]">/</span>
+            <span className="mx-1.5 text-dim">/</span>
             <span>{patternName}</span>
           </>
         )}

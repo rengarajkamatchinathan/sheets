@@ -15,7 +15,7 @@ export default function Error({ error, retry }: { error: unknown; retry: () => v
 
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-24 text-center">
-      <span className="flex size-12 items-center justify-center rounded-2xl bg-white/[0.04] text-medium">
+      <span className="flex size-12 items-center justify-center rounded-2xl bg-fg/[0.04] text-medium">
         <TriangleAlert className="size-6" />
       </span>
       <div>
@@ -32,7 +32,7 @@ export default function Error({ error, retry }: { error: unknown; retry: () => v
         >
           <RotateCw className="size-4" /> Try again
         </button>
-        <Link href="/" className="inline-flex h-9 items-center rounded-lg px-3 text-sm text-mute hover:bg-white/5 hover:text-ink">
+        <Link href="/" className="inline-flex h-9 items-center rounded-lg px-3 text-sm text-mute hover:bg-fg/5 hover:text-ink">
           Dashboard
         </Link>
       </div>

@@ -19,11 +19,11 @@ function StaticCode({ code }: { code: string }) {
   return (
     <pre
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-10 m-0 overflow-hidden bg-[#0f1318] py-1 font-mono text-[13px] leading-[1.65] text-[#d4dce5]"
+      className="pointer-events-none absolute inset-0 z-10 m-0 overflow-hidden bg-editor py-1 font-mono text-[13px] leading-[1.65] text-code"
     >
       {lines.map((l, i) => (
         <div key={i} className="flex">
-          <span className="w-[3.6em] flex-none pr-[1.6em] text-right text-[#3e4855] select-none">{i + 1}</span>
+          <span className="w-[3.6em] flex-none pr-[1.6em] text-right text-dim select-none">{i + 1}</span>
           <span className="whitespace-pre">{l || " "}</span>
         </div>
       ))}
@@ -140,7 +140,7 @@ export default function CodeTabs({
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-line bg-[#0f1318]">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-line bg-editor">
       {/* Tabs */}
       <div className="flex items-stretch border-b border-line bg-panel">
         <div ref={stripRef} role="tablist" aria-label="Code snippets" className="flex min-w-0 flex-1 overflow-x-auto [&::-webkit-scrollbar]:h-1.5">
@@ -159,7 +159,7 @@ export default function CodeTabs({
                 title="Double-click to rename"
                 className={cn(
                   "group relative flex h-10 flex-none cursor-pointer items-center gap-1.5 pr-1.5 pl-3.5 text-[13px] select-none",
-                  on ? "bg-[#0f1318] text-ink" : "text-mute hover:bg-white/[0.03] hover:text-soft",
+                  on ? "bg-editor text-ink" : "text-mute hover:bg-fg/[0.03] hover:text-soft",
                 )}
               >
                 {on && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-brand" />}
@@ -190,7 +190,7 @@ export default function CodeTabs({
                     close(t);
                   }}
                   className={cn(
-                    "flex size-6 items-center justify-center rounded-md text-mute hover:bg-white/10 hover:text-ink",
+                    "flex size-6 items-center justify-center rounded-md text-mute hover:bg-fg/10 hover:text-ink",
                     on ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus:opacity-100",
                   )}
                 >
@@ -205,7 +205,7 @@ export default function CodeTabs({
                 type="button"
                 aria-label="New snippet"
                 onClick={add}
-                className="flex h-10 w-10 flex-none items-center justify-center text-mute hover:bg-white/[0.03] hover:text-ink"
+                className="flex h-10 w-10 flex-none items-center justify-center text-mute hover:bg-fg/[0.03] hover:text-ink"
               >
                 <Plus className="size-4" />
               </button>
@@ -223,7 +223,7 @@ export default function CodeTabs({
                   aria-label="Format code"
                   disabled={fmt.busy || !active.code.trim()}
                   onClick={format}
-                  className="flex h-8 items-center gap-1.5 rounded-md px-2 text-[12.5px] text-mute hover:bg-white/5 hover:text-ink disabled:opacity-40"
+                  className="flex h-8 items-center gap-1.5 rounded-md px-2 text-[12.5px] text-mute hover:bg-fg/5 hover:text-ink disabled:opacity-40"
                 >
                   <WandSparkles className={cn("size-3.5", fmt.busy && "animate-pulse")} />
                   Format
@@ -242,7 +242,7 @@ export default function CodeTabs({
                       setTimeout(() => setCopied(false), 1200);
                     })
                   }
-                  className="flex size-8 items-center justify-center rounded-md text-mute hover:bg-white/5 hover:text-ink"
+                  className="flex size-8 items-center justify-center rounded-md text-mute hover:bg-fg/5 hover:text-ink"
                 >
                   {copied ? <Check className="size-4 text-easy" /> : <Copy className="size-3.5" />}
                 </button>
@@ -256,7 +256,7 @@ export default function CodeTabs({
       </div>
 
       {fmt.error && (
-        <div role="alert" className="flex items-center gap-2 border-b border-line bg-[#2c1416] px-3 py-1.5 text-xs text-hard">
+        <div role="alert" className="flex items-center gap-2 border-b border-line bg-hard-bg px-3 py-1.5 text-xs text-hard">
           <AlertCircle className="size-3.5 flex-none" />
           <span className="truncate">Couldn’t format — {fmt.error}</span>
         </div>
@@ -344,10 +344,10 @@ function ComplexityInput({ label, value, onChange }: { label: string; value: str
         <span
           className={cn(
             "flex h-7 items-center rounded-md px-1.5 transition-colors",
-            focused ? "bg-chip ring-1 ring-brand/40" : "hover:bg-white/5",
+            focused ? "bg-chip ring-1 ring-brand/40" : "hover:bg-fg/5",
           )}
         >
-          <span className={inner ? "text-soft" : "text-[#4a5462]"}>O(</span>
+          <span className={inner ? "text-soft" : "text-dim"}>O(</span>
           <input
             value={inner}
             onChange={(e) => onChange(wrap(e.target.value))}
@@ -362,16 +362,16 @@ function ComplexityInput({ label, value, onChange }: { label: string; value: str
             spellCheck={false}
             aria-label={`${label} complexity`}
             style={{ width: `${Math.max(inner.length, 1) + 0.5}ch` }}
-            className="min-w-[1.5ch] bg-transparent text-center text-ink placeholder:text-[#4a5462] focus:outline-none"
+            className="min-w-[1.5ch] bg-transparent text-center text-ink placeholder:text-dim focus:outline-none"
           />
-          <span className={inner ? "text-soft" : "text-[#4a5462]"}>)</span>
+          <span className={inner ? "text-soft" : "text-dim"}>)</span>
         </span>
       </label>
       {focused && (
         <div
           role="listbox"
           aria-label={`Common ${label.toLowerCase()} complexities`}
-          className="absolute bottom-full left-0 z-20 mb-2 flex w-max max-w-[22rem] flex-wrap gap-1 rounded-lg border border-line2 bg-[#1c222b] p-1.5 shadow-2xl"
+          className="absolute bottom-full left-0 z-20 mb-2 flex w-max max-w-[22rem] flex-wrap gap-1 rounded-lg border border-line2 bg-pop p-1.5 shadow-2xl"
         >
           {COMMON_COMPLEXITIES.map((c) => (
             <button
@@ -384,7 +384,7 @@ function ComplexityInput({ label, value, onChange }: { label: string; value: str
               onClick={() => onChange(wrap(c))}
               className={cn(
                 "h-7 rounded-md px-2 font-mono text-[12px]",
-                inner.trim() === c ? "bg-brand/15 text-brand-soft" : "text-soft hover:bg-white/[0.06] hover:text-ink",
+                inner.trim() === c ? "bg-brand/15 text-brand-soft" : "text-soft hover:bg-fg/[0.06] hover:text-ink",
               )}
             >
               O({c})

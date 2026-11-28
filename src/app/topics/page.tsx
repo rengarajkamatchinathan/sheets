@@ -67,16 +67,16 @@ export default async function TopicsPage({ searchParams }: PageProps<"/topics">)
               type="search"
               defaultValue={q}
               placeholder="Search"
-              className="h-8 w-44 rounded-md bg-transparent pr-2 pl-8 text-[13px] text-ink placeholder:text-mute hover:bg-white/5 focus:w-60 focus:bg-white/5 focus:outline-none transition-[width]"
+              className="h-8 w-44 rounded-md bg-transparent pr-2 pl-8 text-[13px] text-ink placeholder:text-mute hover:bg-fg/5 focus:w-60 focus:bg-fg/5 focus:outline-none transition-[width]"
             />
           </form>
           <details className="relative">
-            <summary className="flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-md px-2 text-[13px] text-mute hover:bg-white/5 hover:text-ink [&::-webkit-details-marker]:hidden">
+            <summary className="flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-md px-2 text-[13px] text-mute hover:bg-fg/5 hover:text-ink [&::-webkit-details-marker]:hidden">
               <Plus className="size-4" /> Topic
             </summary>
             <form
               action={createTopic}
-              className="absolute right-0 z-10 mt-1 flex w-80 flex-col gap-3 rounded-xl border border-line2 bg-[#1c222b] p-4 shadow-2xl"
+              className="absolute right-0 z-10 mt-1 flex w-80 flex-col gap-3 rounded-xl border border-line2 bg-pop p-4 shadow-2xl"
             >
               <label className="text-xs text-mute">
                 Name
@@ -124,7 +124,7 @@ export default async function TopicsPage({ searchParams }: PageProps<"/topics">)
               aria-current={view === v ? "true" : undefined}
               className={cn(
                 "flex size-7 items-center justify-center rounded-md",
-                view === v ? "bg-white/[0.06] text-ink" : "text-mute hover:text-ink",
+                view === v ? "bg-fg/[0.06] text-ink" : "text-mute hover:text-ink",
               )}
             >
               <Icon className="size-4" />
@@ -141,7 +141,7 @@ export default async function TopicsPage({ searchParams }: PageProps<"/topics">)
           <ul>
             {matches.map((m) => (
               <li key={m.id}>
-                <IntentLink href={`/problems/${m.id}`} className="flex h-10 items-center gap-3 rounded-lg px-2 text-sm hover:bg-white/[0.025]">
+                <IntentLink href={`/problems/${m.id}`} className="flex h-10 items-center gap-3 rounded-lg px-2 text-sm hover:bg-fg/[0.025]">
                   {m.status === "Solved" ? (
                     <Check className="size-3.5 flex-none text-easy" />
                   ) : (
@@ -176,7 +176,7 @@ function Thin({ solved, total }: { solved: number; total: number }) {
     <span className="block h-1 overflow-hidden rounded-full bg-line" aria-hidden="true">
       <span
         className="block h-full rounded-full"
-        style={{ width: `${total ? (solved / total) * 100 : 0}%`, background: done ? "#4ade80" : "#2dd4bf" }}
+        style={{ width: `${total ? (solved / total) * 100 : 0}%`, background: done ? "var(--color-easy)" : "var(--color-brand)" }}
       />
     </span>
   );
@@ -197,7 +197,7 @@ function TopicList({ topics }: { topics: TopicRow[] }) {
           <li key={t.id}>
             <Link prefetch
               href={`/topics/${t.slug}`}
-              className="group flex min-h-14 items-center gap-3.5 rounded-xl bg-white/[0.02] px-3.5 transition-colors hover:bg-white/[0.045]"
+              className="group flex min-h-14 items-center gap-3.5 rounded-xl bg-fg/[0.02] px-3.5 transition-colors hover:bg-fg/[0.045]"
             >
               <Ring value={t.solved} max={t.total} size={30} stroke={3}>
                 {done && <Check className="size-3.5 text-easy" strokeWidth={3} />}
@@ -231,7 +231,7 @@ function TopicGrid({ topics }: { topics: TopicRow[] }) {
           <li key={t.id}>
             <Link prefetch
               href={`/topics/${t.slug}`}
-              className="flex h-full flex-col gap-4 rounded-xl bg-white/[0.02] p-4 transition-colors hover:bg-white/[0.045]"
+              className="flex h-full flex-col gap-4 rounded-xl bg-fg/[0.02] p-4 transition-colors hover:bg-fg/[0.045]"
             >
               <span className="flex items-start justify-between gap-3">
                 <span className="flex min-w-0 flex-col">

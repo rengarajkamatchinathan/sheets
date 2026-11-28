@@ -18,7 +18,7 @@ export default async function NewProblemPage({ searchParams }: PageProps<"/probl
         <h1 className="text-2xl font-semibold tracking-tight">New problem</h1>
         <p className="mt-1 text-sm text-mute">Paste a LeetCode link to fill in the details automatically.</p>
       </div>
-      <div className="rounded-2xl bg-white/[0.02] p-5">
+      <div className="rounded-2xl bg-fg/[0.02] p-5">
         <ProblemCreator topics={topics} defaultTopicId={preset} />
       </div>
     </div>

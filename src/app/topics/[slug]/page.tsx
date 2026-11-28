@@ -9,8 +9,8 @@ import { Ring, btnPrimary, inputCls } from "@/components/kit";
 import { loadTopicChoices, loadTopicPage } from "@/lib/queries";
 
 const quietBtn =
-  "flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-md px-2 text-[13px] text-mute hover:bg-white/5 hover:text-ink [&::-webkit-details-marker]:hidden";
-const popover = "absolute right-0 z-40 mt-1 flex w-80 flex-col gap-3 rounded-xl border border-line2 bg-[#1c222b] p-4 shadow-2xl";
+  "flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-md px-2 text-[13px] text-mute hover:bg-fg/5 hover:text-ink [&::-webkit-details-marker]:hidden";
+const popover = "absolute right-0 z-40 mt-1 flex w-80 flex-col gap-3 rounded-xl border border-line2 bg-pop p-4 shadow-2xl";
 
 export default async function TopicPage({ params }: PageProps<"/topics/[slug]">) {
 
@@ -65,7 +65,7 @@ export default async function TopicPage({ params }: PageProps<"/topics/[slug]">)
                 </form>
                 <form action={deleteTopic} className="border-t border-line pt-3">
                   <input type="hidden" name="id" value={topic.id} />
-                  <button className="h-9 w-full rounded-lg text-sm text-hard hover:bg-[#2c1416]">
+                  <button className="h-9 w-full rounded-lg text-sm text-hard hover:bg-hard-bg">
                     Delete topic and its {all.length} problems
                   </button>
                 </form>
@@ -77,7 +77,7 @@ export default async function TopicPage({ params }: PageProps<"/topics/[slug]">)
       </div>
 
       <section aria-label="Progress" className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-        <div className="flex items-center gap-4 rounded-xl bg-white/[0.02] p-4">
+        <div className="flex items-center gap-4 rounded-xl bg-fg/[0.02] p-4">
           <Ring value={solved} max={all.length} size={64} stroke={5} label={`${solved} of ${all.length} solved`}>
             <span className="font-mono text-sm font-semibold text-ink">{pct}%</span>
           </Ring>
@@ -116,7 +116,7 @@ export default async function TopicPage({ params }: PageProps<"/topics/[slug]">)
             <ArrowRight className="size-4 flex-none text-brand-soft transition-transform group-hover:translate-x-0.5" />
           </IntentLink>
         ) : (
-          <div className="flex items-center gap-4 rounded-xl bg-white/[0.02] p-4 text-sm text-mute">
+          <div className="flex items-center gap-4 rounded-xl bg-fg/[0.02] p-4 text-sm text-mute">
             {all.length ? "Everything here is solved. Nice work." : "No problems yet — add one with + Problem above."}
           </div>
         )}

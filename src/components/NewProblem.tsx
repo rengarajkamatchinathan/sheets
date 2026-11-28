@@ -156,14 +156,14 @@ export function ProblemCreator({
           }}
           placeholder="Paste a LeetCode link, or type a title"
           spellCheck={false}
-          className="h-12 w-full rounded-xl bg-white/[0.04] pr-10 pl-11 text-[15px] text-ink placeholder:text-mute focus:bg-white/[0.06] focus:ring-2 focus:ring-brand/40 focus:outline-none"
+          className="h-12 w-full rounded-xl bg-fg/[0.04] pr-10 pl-11 text-[15px] text-ink placeholder:text-mute focus:bg-fg/[0.06] focus:ring-2 focus:ring-brand/40 focus:outline-none"
         />
         {query && (
           <button
             type="button"
             aria-label="Clear"
             onClick={reset}
-            className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-mute hover:bg-white/5 hover:text-ink"
+            className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-mute hover:bg-fg/5 hover:text-ink"
           >
             <X className="size-4" />
           </button>
@@ -179,11 +179,11 @@ export function ProblemCreator({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Problem title"
-                className="h-10 w-full rounded-lg bg-white/[0.04] px-3 text-sm text-ink placeholder:text-mute focus:ring-2 focus:ring-brand/40 focus:outline-none"
+                className="h-10 w-full rounded-lg bg-fg/[0.04] px-3 text-sm text-ink placeholder:text-mute focus:ring-2 focus:ring-brand/40 focus:outline-none"
               />
             </Field>
           ) : lookup.state === "loading" || lookup.state === "idle" ? (
-            <div className="flex items-center gap-3 rounded-xl bg-white/[0.03] p-3.5 text-sm text-mute">
+            <div className="flex items-center gap-3 rounded-xl bg-fg/[0.03] p-3.5 text-sm text-mute">
               <Loader2 className="size-4 animate-spin" /> Looking up the problem on LeetCode…
             </div>
           ) : meta ? (
@@ -197,7 +197,7 @@ export function ProblemCreator({
                     aria-label="Title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="-mx-1 w-full rounded-md bg-transparent px-1 text-[15px] font-medium text-ink hover:bg-white/[0.04] focus:bg-white/[0.06] focus:outline-none"
+                    className="-mx-1 w-full rounded-md bg-transparent px-1 text-[15px] font-medium text-ink hover:bg-fg/[0.04] focus:bg-fg/[0.06] focus:outline-none"
                   />
                   <div className="flex items-center gap-2 text-xs text-mute">
                     Found on LeetCode
@@ -231,7 +231,7 @@ export function ProblemCreator({
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              <p className="rounded-xl bg-white/[0.03] px-3.5 py-2.5 text-[13px] text-mute">
+              <p className="rounded-xl bg-fg/[0.03] px-3.5 py-2.5 text-[13px] text-mute">
                 {lookup.state === "done" && !lookup.result.ok && lookup.result.reason === "not-found"
                   ? "LeetCode doesn’t know this link — check it, or enter the title yourself."
                   : "Couldn’t reach LeetCode right now — enter the title yourself."}
@@ -241,7 +241,7 @@ export function ProblemCreator({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Problem title"
-                  className="h-10 w-full rounded-lg bg-white/[0.04] px-3 text-sm text-ink placeholder:text-mute focus:ring-2 focus:ring-brand/40 focus:outline-none"
+                  className="h-10 w-full rounded-lg bg-fg/[0.04] px-3 text-sm text-ink placeholder:text-mute focus:ring-2 focus:ring-brand/40 focus:outline-none"
                 />
               </Field>
             </div>
@@ -256,7 +256,7 @@ export function ProblemCreator({
             <button
               type="button"
               onClick={() => setExtraLink("")}
-              className="inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-xs text-mute hover:bg-white/5 hover:text-ink"
+              className="inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-xs text-mute hover:bg-fg/5 hover:text-ink"
             >
               <Plus className="size-3.5" /> Add link
             </button>
@@ -267,7 +267,7 @@ export function ProblemCreator({
               value={extraLink}
               onChange={(e) => setExtraLink(e.target.value)}
               placeholder="https://…"
-              className="h-9 w-full rounded-lg bg-white/[0.04] px-3 text-sm text-ink placeholder:text-mute focus:ring-2 focus:ring-brand/40 focus:outline-none"
+              className="h-9 w-full rounded-lg bg-fg/[0.04] px-3 text-sm text-ink placeholder:text-mute focus:ring-2 focus:ring-brand/40 focus:outline-none"
             />
           )}
         </div>
@@ -357,7 +357,7 @@ export function ProblemCreator({
 
       {/* Footer */}
       <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-line pt-4">
-        <span className="mr-auto text-xs text-[#5b6675]">
+        <span className="mr-auto text-xs text-faint">
           {added ? (
             <span className="inline-flex items-center gap-1.5 text-easy">
               <Check className="size-3.5" /> Added “{added}”
@@ -372,7 +372,7 @@ export function ProblemCreator({
           type="button"
           disabled={!canSubmit}
           onClick={() => submit("another")}
-          className="h-9 rounded-lg px-3 text-sm text-soft hover:bg-white/5 hover:text-ink disabled:opacity-40"
+          className="h-9 rounded-lg px-3 text-sm text-soft hover:bg-fg/5 hover:text-ink disabled:opacity-40"
         >
           Add another
         </button>
@@ -409,13 +409,13 @@ export function NewProblemDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         className={cn(
-          "flex h-8 items-center gap-1.5 rounded-md px-2 text-[13px] text-mute hover:bg-white/5 hover:text-ink",
+          "flex h-8 items-center gap-1.5 rounded-md px-2 text-[13px] text-mute hover:bg-fg/5 hover:text-ink",
           className,
         )}
       >
         <Plus className="size-4" /> {label}
       </DialogTrigger>
-      <DialogContent className="gap-0 border-line2 bg-[#161b22] p-5 sm:max-w-lg">
+      <DialogContent className="gap-0 border-line2 bg-panel p-5 sm:max-w-lg">
         <DialogTitle className="text-base font-semibold">New problem{topicName ? ` in ${topicName}` : ""}</DialogTitle>
         <DialogDescription className="mt-1 mb-4 text-[13px] text-mute">
           Paste a LeetCode link to fill in the details automatically.
@@ -452,7 +452,7 @@ function Chip({ on, muted, onClick, children }: { on: boolean; muted?: boolean; 
         "h-8 rounded-full px-3 text-[13px] transition-colors",
         on
           ? "bg-brand/15 text-brand-soft ring-1 ring-brand/40"
-          : cn("bg-white/[0.04] hover:bg-white/[0.08] hover:text-ink", muted ? "text-mute italic" : "text-soft"),
+          : cn("bg-fg/[0.04] hover:bg-fg/[0.08] hover:text-ink", muted ? "text-mute italic" : "text-soft"),
       )}
     >
       {children}

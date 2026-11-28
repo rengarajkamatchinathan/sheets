@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import Sidebar, { SidebarView } from "@/components/Sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { ThemeScript } from "@/components/ThemeToggle";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const mono = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"] });
@@ -16,8 +17,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={cn("dark antialiased", inter.variable, mono.variable)}>
+    <html lang="en" className={cn("dark antialiased", inter.variable, mono.variable)} data-theme="dark" suppressHydrationWarning>
       <body className="min-h-screen bg-bg font-sans text-ink">
+        <ThemeScript />
         <TooltipProvider delayDuration={300}>
           <div className="flex min-h-screen flex-col md:flex-row">
             <Suspense fallback={<SidebarView path="" />}>

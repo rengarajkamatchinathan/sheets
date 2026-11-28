@@ -184,7 +184,7 @@ export default function TopicBoard({
                 type="button"
                 aria-label={allOpen ? "Collapse all" : "Expand all"}
                 onClick={() => setOpen(allOpen ? new Set() : new Set(groups.map((g) => g.key)))}
-                className="flex size-7 items-center justify-center rounded-md hover:bg-white/5 hover:text-ink"
+                className="flex size-7 items-center justify-center rounded-md hover:bg-fg/5 hover:text-ink"
               >
                 {allOpen ? <ChevronsDownUp className="size-4" /> : <ChevronsUpDown className="size-4" />}
               </button>
@@ -211,8 +211,8 @@ export default function TopicBoard({
               key={g.key}
               aria-label={g.name}
               className={cn(
-                "rounded-xl bg-white/[0.02] ring-1 ring-transparent transition-colors",
-                isOpen && "bg-white/[0.03]",
+                "rounded-xl bg-fg/[0.02] ring-1 ring-transparent transition-colors",
+                isOpen && "bg-fg/[0.03]",
                 dropHere && dragId != null && "ring-brand/40",
               )}
               onDragOver={(e) => {
@@ -228,7 +228,7 @@ export default function TopicBoard({
                 endDrag();
               }}
             >
-              <div className="group/row flex min-h-14 items-center gap-3 rounded-xl pr-2 pl-3.5 hover:bg-white/[0.025]">
+              <div className="group/row flex min-h-14 items-center gap-3 rounded-xl pr-2 pl-3.5 hover:bg-fg/[0.025]">
                 <Ring value={solved} max={all.length} size={30} stroke={3}>
                   {done && <Check className="size-3.5 text-easy" strokeWidth={3} />}
                 </Ring>
@@ -276,7 +276,7 @@ export default function TopicBoard({
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       aria-label={`${g.name} options`}
-                      className={cn("flex size-7 items-center justify-center rounded-md text-mute hover:bg-white/5 hover:text-ink", reveal)}
+                      className={cn("flex size-7 items-center justify-center rounded-md text-mute hover:bg-fg/5 hover:text-ink", reveal)}
                     >
                       <MoreHorizontal className="size-4" />
                     </DropdownMenuTrigger>
@@ -308,7 +308,7 @@ export default function TopicBoard({
                   tabIndex={-1}
                   aria-hidden="true"
                   onClick={() => toggleGroup(g.key)}
-                  className="flex size-7 items-center justify-center text-[#5b6675] hover:text-ink"
+                  className="flex size-7 items-center justify-center text-faint hover:text-ink"
                 >
                   <ChevronRight className={cn("size-4 transition-transform", isOpen && "rotate-90")} />
                 </button>
@@ -317,7 +317,7 @@ export default function TopicBoard({
               {isOpen && (
                 <ul className="border-t border-line/50 py-1">
                   {rows.length === 0 && (
-                    <li className="py-2.5 pl-14 text-[13px] text-[#5b6675]">
+                    <li className="py-2.5 pl-14 text-[13px] text-faint">
                       {dragId != null ? "Drop here" : filtering && all.length ? "No matches" : "Empty — drag a problem here"}
                     </li>
                   )}
@@ -401,7 +401,7 @@ export default function TopicBoard({
         <button
           type="button"
           onClick={() => setAdding("")}
-          className="flex h-9 w-fit items-center gap-2 rounded-md pr-2 pl-1.5 text-[13px] text-mute hover:bg-white/[0.025] hover:text-ink"
+          className="flex h-9 w-fit items-center gap-2 rounded-md pr-2 pl-1.5 text-[13px] text-mute hover:bg-fg/[0.025] hover:text-ink"
         >
           <Plus className="size-4" /> Add pattern
         </button>
@@ -430,7 +430,7 @@ function ProblemRow({
   const solved = p.status === "Solved";
   const attempted = p.status === "Attempted";
   return (
-    <div className="group/row flex h-10 items-center gap-2.5 rounded-lg pr-2 pl-[2.6rem] hover:bg-white/[0.03]">
+    <div className="group/row flex h-10 items-center gap-2.5 rounded-lg pr-2 pl-[2.6rem] hover:bg-fg/[0.03]">
       <button
         type="button"
         role="checkbox"
@@ -442,7 +442,7 @@ function ProblemRow({
         <span
           className={cn(
             "flex size-4 items-center justify-center rounded-[4px] border transition-colors",
-            solved ? "border-easy bg-easy" : attempted ? "border-medium" : "border-[#4a5462] hover:border-mute",
+            solved ? "border-easy bg-easy" : attempted ? "border-medium" : "border-dim hover:border-mute",
           )}
         >
           {solved && <Check className="size-3 text-bg" strokeWidth={3.5} />}
@@ -459,7 +459,7 @@ function ProblemRow({
       </IntentLink>
 
       {/* Quiet indicators: only shown when there is something */}
-      <span className="flex flex-none items-center gap-1.5 text-[#5b6675]">
+      <span className="flex flex-none items-center gap-1.5 text-faint">
         {p.hasNotes && <FileText aria-label="Has notes" className="size-3.5" />}
         {p.hasCode && <Code2 aria-label="Has code" className="size-3.5" />}
         {p.hasDescription && <BookOpen aria-label="Has description" className="size-3.5" />}
@@ -477,7 +477,7 @@ function ProblemRow({
             rel="noreferrer"
             draggable={false}
             aria-label="Open problem link"
-            className={cn("flex size-7 items-center justify-center rounded-md text-mute hover:bg-white/5 hover:text-ink", reveal)}
+            className={cn("flex size-7 items-center justify-center rounded-md text-mute hover:bg-fg/5 hover:text-ink", reveal)}
           >
             <ExternalLink className="size-3.5" />
           </a>
@@ -490,7 +490,7 @@ function ProblemRow({
           aria-label={p.starred ? "Unstar" : "Star"}
           onClick={onStar}
           className={cn(
-            "flex size-7 items-center justify-center rounded-md hover:bg-white/5",
+            "flex size-7 items-center justify-center rounded-md hover:bg-fg/5",
             p.starred ? "text-medium" : cn("text-mute hover:text-ink", reveal),
           )}
         >
@@ -499,7 +499,7 @@ function ProblemRow({
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label={`${p.title} options`}
-            className={cn("flex size-7 items-center justify-center rounded-md text-mute hover:bg-white/5 hover:text-ink", reveal)}
+            className={cn("flex size-7 items-center justify-center rounded-md text-mute hover:bg-fg/5 hover:text-ink", reveal)}
           >
             <MoreHorizontal className="size-4" />
           </DropdownMenuTrigger>

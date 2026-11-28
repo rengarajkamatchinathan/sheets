@@ -159,7 +159,7 @@ export default function ProblemView({
           value={fields.title}
           onChange={(e) => set("title", e.target.value)}
           spellCheck={false}
-          className="-mx-1.5 max-w-[48ch] min-w-[8ch] rounded-md bg-transparent px-1.5 py-0.5 text-lg font-semibold tracking-tight text-ink [field-sizing:content] hover:bg-white/[0.03] focus:bg-white/[0.03] focus:outline-none"
+          className="-mx-1.5 max-w-[48ch] min-w-[8ch] rounded-md bg-transparent px-1.5 py-0.5 text-lg font-semibold tracking-tight text-ink [field-sizing:content] hover:bg-fg/[0.03] focus:bg-fg/[0.03] focus:outline-none"
         />
         <section aria-label="Properties" className="min-w-0">
           <Properties v={props} set={(k, v) => set(k, v as never)} patterns={patterns} />
@@ -174,7 +174,7 @@ export default function ProblemView({
                 aria-label={fields.starred ? "Unstar" : "Star"}
                 onClick={() => set("starred", !fields.starred)}
                 className={cn(
-                  "flex size-8 items-center justify-center rounded-lg hover:bg-white/5",
+                  "flex size-8 items-center justify-center rounded-lg hover:bg-fg/5",
                   fields.starred ? "text-medium" : "text-mute hover:text-ink",
                 )}
               >
@@ -186,7 +186,7 @@ export default function ProblemView({
           <DropdownMenu>
             <DropdownMenuTrigger
               aria-label="More actions"
-              className="flex size-8 items-center justify-center rounded-lg text-mute hover:bg-white/5 hover:text-ink"
+              className="flex size-8 items-center justify-center rounded-lg text-mute hover:bg-fg/5 hover:text-ink"
             >
               <MoreHorizontal className="size-[18px]" />
             </DropdownMenuTrigger>
@@ -222,7 +222,7 @@ export default function ProblemView({
         notes={
           <div className="flex flex-col gap-2">
             {!hasRealNotes(fields.notes) && (
-              <p className="text-xs text-[#5b6675]">Select text to format · # heading · - list · ``` code</p>
+              <p className="text-xs text-faint">Select text to format · # heading · - list · ``` code</p>
             )}
             {/* `fields.notes` (not the initial prop) so switching tabs never loses edits */}
             <RichText initial={fields.notes} onChange={(html) => set("notes", html)} />
@@ -272,7 +272,7 @@ function Workspace({
   const [maxed, setMaxed] = useState<"left" | "right" | null>(null);
   const groupRef = useRef<GroupImperativeHandle | null>(null);
 
-  const panel = "flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-line bg-[#0f1318]";
+  const panel = "flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-line bg-editor";
 
   if (!desktop) {
     const tabs = [...LEFT_TABS, { id: "code" as const, label: "Code", Icon: CodeXml }];
@@ -282,7 +282,7 @@ function Workspace({
         {mobileTab === "code" ? (
           <div className="h-[70vh]">{code(null)}</div>
         ) : (
-          <div className="rounded-xl border border-line bg-[#0f1318] px-4 py-4">{mobileTab === "notes" ? notes : description}</div>
+          <div className="rounded-xl border border-line bg-editor px-4 py-4">{mobileTab === "notes" ? notes : description}</div>
         )}
       </div>
     );
@@ -295,7 +295,7 @@ function Workspace({
           type="button"
           aria-label={maxed === side ? "Restore layout" : "Maximise panel"}
           onClick={() => setMaxed(maxed === side ? null : side)}
-          className="flex size-7 items-center justify-center rounded-md text-mute hover:bg-white/5 hover:text-ink"
+          className="flex size-7 items-center justify-center rounded-md text-mute hover:bg-fg/5 hover:text-ink"
         >
           {maxed === side ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
         </button>
@@ -389,7 +389,7 @@ function PanelTabs<T extends string>({
 function SaveState({ saving, dirty, error, onRetry }: { saving: boolean; dirty: boolean; error: boolean; onRetry: () => void }) {
   if (error)
     return (
-      <button type="button" onClick={onRetry} className="flex h-8 items-center gap-1.5 rounded-md px-2 text-xs text-hard hover:bg-white/5">
+      <button type="button" onClick={onRetry} className="flex h-8 items-center gap-1.5 rounded-md px-2 text-xs text-hard hover:bg-fg/5">
         <AlertCircle className="size-3.5" /> Not saved — retry
       </button>
     );

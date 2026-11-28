@@ -46,9 +46,9 @@ export default function DifficultyGauge({ stats }: { stats: Stat[] }) {
         <svg width="220" height="196" viewBox="0 0 220 196" role="img" aria-label={`${solved} of ${total} problems solved`}>
           {segments.map((s) => (
             <g key={s.difficulty}>
-              <path d={arc(s.from, s.to)} fill="none" stroke={DIFF_HEX[s.difficulty]} strokeOpacity="0.2" strokeWidth={STROKE} strokeLinecap="round" />
+              <path d={arc(s.from, s.to)} fill="none" style={{ stroke: DIFF_HEX[s.difficulty] }} strokeOpacity="0.2" strokeWidth={STROKE} strokeLinecap="round" />
               {s.lit != null && (
-                <path d={arc(s.from, s.lit)} fill="none" stroke={DIFF_HEX[s.difficulty]} strokeWidth={STROKE} strokeLinecap="round" />
+                <path d={arc(s.from, s.lit)} fill="none" style={{ stroke: DIFF_HEX[s.difficulty] }} strokeWidth={STROKE} strokeLinecap="round" />
               )}
             </g>
           ))}
@@ -59,7 +59,7 @@ export default function DifficultyGauge({ stats }: { stats: Stat[] }) {
             <span className="text-lg text-soft">/{total}</span>
           </div>
           <div className="mt-1 flex items-center gap-1.5 text-[15px] text-ink">
-            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ stroke: "var(--color-easy)" }} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 6 9 17l-5-5" />
             </svg>
             Solved

@@ -5,7 +5,7 @@
 import { cn } from "@/lib/utils";
 
 function Bone({ className, style }: { className?: string; style?: React.CSSProperties }) {
-  return <div className={cn("animate-pulse rounded-md bg-white/[0.045]", className)} style={style} />;
+  return <div className={cn("animate-pulse rounded-md bg-fg/[0.045]", className)} style={style} />;
 }
 
 function Busy({ label, className, children }: { label: string; className?: string; children: React.ReactNode }) {
@@ -95,7 +95,7 @@ export function ProblemSkeleton() {
             ))}
           </div>
         </div>
-        <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-line bg-[#0f1318]">
+        <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-line bg-editor">
           <div className="h-10 border-b border-line bg-panel" />
           <div className="flex flex-col gap-2.5 p-5">
             {[40, 70, 55, 82, 64, 30].map((w, i) => (

@@ -5,23 +5,32 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  /* App palette */
-  --color-bg: #0e1116;
-  --color-panel: #161b22;
-  --color-side: #11151b;
-  --color-sunk: #0b0e13;
-  --color-chip: #1f2630;
-  --color-line: #232a34;
-  --color-line2: #2e3744;
-  --color-ink: #e6edf3;
-  --color-soft: #c9d3dd;
-  --color-mute: #9ba7b4;
-  --color-brand: #2dd4bf;
-  --color-brand-ink: #0b1f1c;
-  --color-brand-soft: #5eead4;
-  --color-easy: #4ade80;
-  --color-medium: #fbbf24;
-  --color-hard: #f87171;
+  /* App palette — values live in the theme blocks below */
+  --color-bg: var(--app-bg);
+  --color-panel: var(--app-panel);
+  --color-side: var(--app-side);
+  --color-sunk: var(--app-sunk);
+  --color-chip: var(--app-chip);
+  --color-pop: var(--app-pop);
+  --color-editor: var(--app-editor);
+  --color-line: var(--app-line);
+  --color-line2: var(--app-line2);
+  --color-ink: var(--app-ink);
+  --color-soft: var(--app-soft);
+  --color-mute: var(--app-mute);
+  --color-faint: var(--app-faint);
+  --color-dim: var(--app-dim);
+  --color-code: var(--app-code);
+  --color-fg: var(--app-fg); /* overlay base for hovers/tints: white on dark, black on light */
+  --color-brand: var(--app-brand);
+  --color-brand-ink: var(--app-brand-ink);
+  --color-brand-soft: var(--app-brand-soft);
+  --color-easy: var(--app-easy);
+  --color-medium: var(--app-medium);
+  --color-hard: var(--app-hard);
+  --color-easy-bg: var(--app-easy-bg);
+  --color-medium-bg: var(--app-medium-bg);
+  --color-hard-bg: var(--app-hard-bg);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains);
   --font-heading: var(--font-inter);
@@ -54,27 +63,116 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* The app is dark-only; shadcn tokens mapped onto the app palette. */
-:root,
-.dark {
-  --background: #0e1116;
-  --foreground: #e6edf3;
-  --card: #161b22;
-  --card-foreground: #e6edf3;
-  --popover: #1c222b;
-  --popover-foreground: #e6edf3;
-  --primary: #2dd4bf;
-  --primary-foreground: #0b1f1c;
-  --secondary: #1f2630;
-  --secondary-foreground: #e6edf3;
-  --muted: #1f2630;
-  --muted-foreground: #9ba7b4;
-  --accent: #262e39;
-  --accent-foreground: #e6edf3;
-  --destructive: #f87171;
-  --border: #2e3744;
-  --input: #2e3744;
-  --ring: #2dd4bf;
+/* ── Dark (default): Notion-style warm neutral greys, softened text ───── */
+:root {
+  color-scheme: dark;
+  --app-bg: #191919;
+  --app-panel: #202020;
+  --app-side: #202020;
+  --app-sunk: #151515;
+  --app-chip: #2c2c2c;
+  --app-pop: #262626;
+  --app-editor: #1e1e1e;
+  --app-line: #2f2f2f;
+  --app-line2: #3a3a3a;
+  --app-ink: #d4d4d4;
+  --app-soft: #bdbdbd;
+  --app-mute: #9b9b9b;
+  --app-faint: #6e6e6e;
+  --app-dim: #525252;
+  --app-code: #cfcfcf;
+  --app-fg: #ffffff;
+  --app-brand: #4fb3a5;
+  --app-brand-ink: #0f1f1d;
+  --app-brand-soft: #6fc6b9;
+  --app-easy: #5fb87a;
+  --app-medium: #d9a441;
+  --app-hard: #e06c66;
+  --app-easy-bg: #1e2a22;
+  --app-medium-bg: #2e2819;
+  --app-hard-bg: #33201f;
+  --app-scroll: #3a3a3a;
+  --app-scroll-hover: #4a4a4a;
+  --heat-0: #2a2a2a;
+  --heat-1: #1f4a44;
+  --heat-2: #2b7068;
+  --heat-3: #3f9a8d;
+  --heat-4: #6fc6b9;
+  --hl-comment: #6e6e6e;
+  --hl-keyword: #6fc6b9;
+  --hl-type: #8fb8e0;
+  --hl-fn: #e3c98a;
+  --hl-string: #e0a47a;
+  --hl-number: #d99ac0;
+  --hl-meta: #b5a6e0;
+  --hl-inline-code: #e8a3a0;
+}
+
+/* ── Light: Notion-style white page, warm ink ─────────────────────────── */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --app-bg: #ffffff;
+  --app-panel: #fbfbfa;
+  --app-side: #f7f7f5;
+  --app-sunk: #f7f6f3;
+  --app-chip: #f1f1ef;
+  --app-pop: #ffffff;
+  --app-editor: #fbfbfa;
+  --app-line: #ececea;
+  --app-line2: #e0dfdc;
+  --app-ink: #37352f;
+  --app-soft: #4f4d47;
+  --app-mute: #787774;
+  --app-faint: #a19f9a;
+  --app-dim: #c5c3bd;
+  --app-code: #37352f;
+  --app-fg: #37352f;
+  --app-brand: #0f8a7e;
+  --app-brand-ink: #ffffff;
+  --app-brand-soft: #0d7268;
+  --app-easy: #3d8a5a;
+  --app-medium: #b7791f;
+  --app-hard: #c4453f;
+  --app-easy-bg: #e8f2ea;
+  --app-medium-bg: #faf0d9;
+  --app-hard-bg: #fbe8e7;
+  --app-scroll: #d9d8d4;
+  --app-scroll-hover: #c5c3bd;
+  --heat-0: #efefed;
+  --heat-1: #c3e6df;
+  --heat-2: #86cbbf;
+  --heat-3: #3fa596;
+  --heat-4: #0d7268;
+  --hl-comment: #a19f9a;
+  --hl-keyword: #0d7268;
+  --hl-type: #2f6fb0;
+  --hl-fn: #8a5a00;
+  --hl-string: #b5521b;
+  --hl-number: #a3336f;
+  --hl-meta: #6b4fbb;
+  --hl-inline-code: #c4453f;
+}
+
+/* shadcn tokens mapped onto the app palette (both themes). */
+:root {
+  --background: var(--app-bg);
+  --foreground: var(--app-ink);
+  --card: var(--app-panel);
+  --card-foreground: var(--app-ink);
+  --popover: var(--app-pop);
+  --popover-foreground: var(--app-ink);
+  --primary: var(--app-brand);
+  --primary-foreground: var(--app-brand-ink);
+  --secondary: var(--app-chip);
+  --secondary-foreground: var(--app-ink);
+  --muted: var(--app-chip);
+  --muted-foreground: var(--app-mute);
+  --accent: var(--app-chip);
+  --accent-foreground: var(--app-ink);
+  --destructive: var(--app-hard);
+  --border: var(--app-line2);
+  --input: var(--app-line2);
+  --ring: var(--app-brand);
   --radius: 0.625rem;
 }
 
@@ -83,7 +181,6 @@
     @apply border-border outline-ring/50;
   }
   html {
-    color-scheme: dark;
     @apply font-sans;
   }
   body {
@@ -123,7 +220,7 @@
   font-family: var(--font-mono);
   font-size: 0.86em;
   background: var(--color-chip);
-  color: #f0a3a3;
+  color: var(--hl-inline-code);
   padding: 2px 5px;
   border-radius: 4px;
 }
@@ -141,7 +238,7 @@
 .notes-editor .tiptap h2.is-empty::before,
 .notes-editor .tiptap h3.is-empty::before {
   content: attr(data-placeholder);
-  color: #5b6675;
+  color: var(--app-faint);
   float: left;
   height: 0;
   pointer-events: none;
@@ -160,17 +257,17 @@
 ::-webkit-scrollbar-corner { background: transparent; }
 ::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
 ::-webkit-scrollbar-thumb {
-  background-color: #2a323d;
+  background-color: var(--app-scroll);
   border-radius: 9999px;
   border: 3px solid transparent;
   background-clip: content-box;
 }
-::-webkit-scrollbar-thumb:hover { background-color: #3d4755; }
-::-webkit-scrollbar-thumb:active { background-color: #4a5462; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--app-scroll-hover); }
+::-webkit-scrollbar-thumb:active { background-color: var(--app-scroll-hover); }
 
 /* Firefox (no ::-webkit-scrollbar support): standard properties. */
 @supports (-moz-appearance: none) {
-  * { scrollbar-width: thin; scrollbar-color: #2a323d transparent; }
+  * { scrollbar-width: thin; scrollbar-color: var(--app-scroll) transparent; }
 }
 
 /* ── Description read view (LeetCode-like statement) ─────────────────── */
@@ -178,7 +275,7 @@
 .notes-editor.is-readonly .tiptap p.is-empty::before { content: none; }
 .notes-editor.desc-view .tiptap { font-size: 14.5px; line-height: 1.75; color: var(--color-soft); }
 .notes-editor.desc-view .tiptap pre {
-  background: #161b22;
+  background: var(--app-sunk);
   border: 0;
   border-left: 2px solid var(--color-line2);
   border-radius: 6px;
@@ -187,6 +284,6 @@
 }
 .notes-editor.desc-view .tiptap pre code { color: var(--color-soft); font-size: 13px; }
 .notes-editor.desc-view .tiptap pre strong { color: var(--color-ink); }
-.notes-editor.desc-view .tiptap code { color: var(--color-ink); background: #1f2630; }
+.notes-editor.desc-view .tiptap code { color: var(--color-ink); background: var(--app-chip); }
 .notes-editor .tiptap img { max-width: 100%; height: auto; border-radius: 8px; margin: 0.5em 0; }
 .notes-editor .tiptap sup, .notes-editor .tiptap sub { font-size: 0.75em; }

@@ -10,7 +10,7 @@ import { NewProblemDialog } from "@/components/NewProblem";
 import { cn } from "@/lib/utils";
 
 const WEEKS = 26;
-const SHADES = ["#1f2630", "#134e4a", "#0f766e", "#14b8a6", "#5eead4"];
+const SHADES = ["var(--heat-0)", "var(--heat-1)", "var(--heat-2)", "var(--heat-3)", "var(--heat-4)"];
 const DIFF_COLOR = { Easy: "text-easy", Medium: "text-medium", Hard: "text-hard" } as const;
 const DIFF_SHORT = { Easy: "Easy", Medium: "Med", Hard: "Hard" } as const;
 
@@ -151,7 +151,7 @@ export default async function Dashboard() {
                 <IntentLink eager
                   key={p.id}
                   href={`/problems/${p.id}`}
-                  className="inline-flex h-7 max-w-64 items-center gap-1.5 rounded-full bg-white/[0.04] px-2.5 text-soft hover:bg-white/[0.08] hover:text-ink"
+                  className="inline-flex h-7 max-w-64 items-center gap-1.5 rounded-full bg-fg/[0.04] px-2.5 text-soft hover:bg-fg/[0.08] hover:text-ink"
                 >
                   <span className="size-1.5 flex-none rounded-full bg-medium" />
                   <span className="truncate">{p.title}</span>
@@ -217,7 +217,7 @@ function SectionHead({ title, meta, href, link }: { title: string; meta?: string
   return (
     <div className="mb-3 flex items-baseline gap-3">
       <h2 className="text-[13px] font-medium text-mute">{title}</h2>
-      {meta && <span className="text-xs text-[#5b6675]">{meta}</span>}
+      {meta && <span className="text-xs text-faint">{meta}</span>}
       {href && (
         <Link href={href} className="ml-auto text-xs text-mute hover:text-ink">
           {link} →
@@ -244,7 +244,7 @@ function ProblemLine({
 }) {
   return (
     <li>
-      <IntentLink eager href={`/problems/${id}`} className="-mx-2 flex h-11 items-center gap-3 rounded-lg px-2 hover:bg-white/[0.03]">
+      <IntentLink eager href={`/problems/${id}`} className="-mx-2 flex h-11 items-center gap-3 rounded-lg px-2 hover:bg-fg/[0.03]">
         <span className="flex size-4 flex-none items-center justify-center">{icon}</span>
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-sm text-soft">{title}</span>
@@ -261,9 +261,9 @@ function ProblemLine({
 function StatusIcon({ status }: { status: "Todo" | "Attempted" | "Solved" }) {
   if (status === "Solved") return <Check aria-label="Solved" className="size-3.5 text-easy" strokeWidth={3} />;
   if (status === "Attempted") return <span aria-label="Attempted" className="size-2 rounded-full bg-medium" />;
-  return <span aria-label="Todo" className="size-2.5 rounded-full border border-[#4a5462]" />;
+  return <span aria-label="Todo" className="size-2.5 rounded-full border border-dim" />;
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="py-3 text-[13px] text-[#5b6675]">{children}</p>;
+  return <p className="py-3 text-[13px] text-faint">{children}</p>;
 }

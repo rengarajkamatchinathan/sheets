@@ -6,6 +6,7 @@ import { useState, useSyncExternalStore } from "react";
 import { BookOpen, LayoutDashboard, Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useThemePref } from "@/components/ThemeToggle";
 
 const NAV = [
   { href: "/", label: "Dashboard", Icon: LayoutDashboard },
@@ -54,6 +55,7 @@ export default function Sidebar() {
 export function SidebarView({ path }: { path: string }) {
   const open = useSyncExternalStore(subscribe, readPinned, () => false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const theme = useThemePref();
 
   const isActive = (href: string) =>
     href === "/" ? path === "/" : path.startsWith(href) || (href === "/topics" && path.startsWith("/problems"));
@@ -84,7 +86,7 @@ export function SidebarView({ path }: { path: string }) {
                   aria-label={open ? undefined : label}
                   className={cn(
                     "relative flex h-10 items-center gap-3 rounded-lg px-[11px] text-sm transition-colors",
-                    active ? "bg-white/[0.06] font-medium text-ink" : "text-mute hover:bg-white/[0.04] hover:text-ink",
+                    active ? "bg-fg/[0.06] font-medium text-ink" : "text-mute hover:bg-fg/[0.04] hover:text-ink",
                   )}
                 >
                   {active && <span className="absolute top-2 bottom-2 left-0 w-0.5 rounded-full bg-brand" />}
@@ -97,16 +99,27 @@ export function SidebarView({ path }: { path: string }) {
         </div>
 
         <div className="mt-auto flex flex-col gap-1 px-1.5">
-          <Label open={open} className="px-[11px] pb-2 text-xs text-[#5b6675]">
+          <Label open={open} className="px-[11px] pb-2 text-xs text-faint">
             Sheet: NeetCode 150
           </Label>
+          <Tip show={!open} label={`Theme: ${theme.label}`}>
+            <button
+              type="button"
+              onClick={theme.cycle}
+              aria-label={`Theme: ${theme.label}. Click to change`}
+              className="flex h-10 items-center gap-3 rounded-lg px-[11px] text-sm text-mute hover:bg-fg/[0.04] hover:text-ink"
+            >
+              <theme.Icon className="size-[18px] flex-none" />
+              <Label open={open}>Theme: {theme.label}</Label>
+            </button>
+          </Tip>
           <Tip show={!open} label="Expand sidebar">
             <button
               type="button"
               onClick={() => writePinned(!open)}
               aria-expanded={open}
               aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
-              className="flex h-10 items-center gap-3 rounded-lg px-[11px] text-sm text-mute hover:bg-white/[0.04] hover:text-ink"
+              className="flex h-10 items-center gap-3 rounded-lg px-[11px] text-sm text-mute hover:bg-fg/[0.04] hover:text-ink"
             >
               {open ? <PanelLeftClose className="size-[18px] flex-none" /> : <PanelLeftOpen className="size-[18px] flex-none" />}
               <Label open={open}>Collapse</Label>
@@ -126,7 +139,7 @@ export function SidebarView({ path }: { path: string }) {
           aria-label="Open menu"
           aria-expanded={mobileOpen}
           onClick={() => setMobileOpen(true)}
-          className="flex size-10 items-center justify-center rounded-lg text-soft hover:bg-white/5"
+          className="flex size-10 items-center justify-center rounded-lg text-soft hover:bg-fg/5"
         >
           <Menu className="size-5" />
         </button>
@@ -157,7 +170,7 @@ export function SidebarView({ path }: { path: string }) {
                   type="button"
                   aria-label="Close menu"
                   onClick={() => setMobileOpen(false)}
-                  className="flex size-10 items-center justify-center rounded-lg text-soft hover:bg-white/5"
+                  className="flex size-10 items-center justify-center rounded-lg text-soft hover:bg-fg/5"
                 >
                   <X className="size-5" />
                 </button>
@@ -172,7 +185,7 @@ export function SidebarView({ path }: { path: string }) {
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex h-12 items-center gap-3 rounded-lg px-3 text-[15px]",
-                      active ? "bg-white/[0.06] font-medium text-ink" : "text-mute hover:bg-white/[0.04] hover:text-ink",
+                      active ? "bg-fg/[0.06] font-medium text-ink" : "text-mute hover:bg-fg/[0.04] hover:text-ink",
                     )}
                   >
                     <Icon className="size-5" />
@@ -180,7 +193,16 @@ export function SidebarView({ path }: { path: string }) {
                   </Link>
                 );
               })}
-              <span className="mt-auto px-3 text-xs text-[#5b6675]">Sheet: NeetCode 150</span>
+              <button
+                type="button"
+                onClick={theme.cycle}
+                aria-label={`Theme: ${theme.label}. Click to change`}
+                className="mt-auto flex h-12 items-center gap-3 rounded-lg px-3 text-[15px] text-mute hover:bg-fg/[0.04] hover:text-ink"
+              >
+                <theme.Icon className="size-5" />
+                Theme: {theme.label}
+              </button>
+              <span className="mt-2 px-3 text-xs text-faint">Sheet: NeetCode 150</span>
       </nav>
     </>
   );

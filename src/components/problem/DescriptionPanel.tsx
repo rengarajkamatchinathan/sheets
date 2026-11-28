@@ -82,7 +82,7 @@ export default function DescriptionPanel({
             <button
               type="button"
               onClick={refetch}
-              className="flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-mute hover:bg-white/5 hover:text-ink"
+              className="flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-mute hover:bg-fg/5 hover:text-ink"
             >
               <RefreshCw className="size-3.5" /> {empty ? "Fetch from LeetCode" : "Refetch"}
             </button>
@@ -92,7 +92,7 @@ export default function DescriptionPanel({
             onClick={() => setEditing((v) => !v)}
             className={cn(
               "flex h-7 items-center gap-1.5 rounded-md px-2 text-xs",
-              editing ? "bg-brand/15 text-brand-soft" : "text-mute hover:bg-white/5 hover:text-ink",
+              editing ? "bg-brand/15 text-brand-soft" : "text-mute hover:bg-fg/5 hover:text-ink",
             )}
           >
             {editing ? <Check className="size-3.5" /> : <Pencil className="size-3.5" />}
@@ -107,13 +107,13 @@ export default function DescriptionPanel({
             <Loader2 className="size-3.5 animate-spin" /> Fetching the statement from LeetCode…
           </div>
           {[92, 100, 76, 88, 60].map((w, i) => (
-            <div key={i} className="h-3.5 animate-pulse rounded bg-white/[0.05]" style={{ width: `${w}%` }} />
+            <div key={i} className="h-3.5 animate-pulse rounded bg-fg/[0.05]" style={{ width: `${w}%` }} />
           ))}
         </div>
       ) : (
         <>
           {error && empty && !editing && (
-            <p className="rounded-lg bg-white/[0.03] px-3 py-2.5 text-[13px] text-mute">{error}</p>
+            <p className="rounded-lg bg-fg/[0.03] px-3 py-2.5 text-[13px] text-mute">{error}</p>
           )}
           {error && !empty && <p className="text-xs text-hard">{error}</p>}
           {(!empty || editing) && (

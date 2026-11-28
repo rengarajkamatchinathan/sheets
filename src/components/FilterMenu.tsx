@@ -30,7 +30,7 @@ export default function FilterMenu({
   const pill = (active: boolean) =>
     cn(
       "inline-flex h-8 items-center rounded-full px-3 text-[13px] transition-colors",
-      active ? "bg-brand/15 text-brand-soft ring-1 ring-brand/30" : "bg-white/[0.04] text-soft hover:bg-white/[0.08] hover:text-ink",
+      active ? "bg-brand/15 text-brand-soft ring-1 ring-brand/30" : "bg-fg/[0.04] text-soft hover:bg-fg/[0.08] hover:text-ink",
     );
 
   return (
@@ -38,7 +38,7 @@ export default function FilterMenu({
       <PopoverTrigger
         className={cn(
           "flex h-8 items-center gap-2 rounded-lg px-2.5 text-[13px] transition-colors",
-          activeCount ? "bg-brand/10 text-brand-soft" : "text-mute hover:bg-white/5 hover:text-ink",
+          activeCount ? "bg-brand/10 text-brand-soft" : "text-mute hover:bg-fg/5 hover:text-ink",
         )}
       >
         <SlidersHorizontal className="size-4" />
