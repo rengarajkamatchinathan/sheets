@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { HashRouter, Route, Routes, useNavigate } from "react-router";
+import { useEffect, useRef, type RefObject } from "react";
+import { HashRouter, Route, Routes, useLocation, useNavigate } from "react-router";
 import { Loader2 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +21,7 @@ type Config = { hasDbUrl: boolean };
 export default function App() {
   const config = useCommand<Config>("get_config");
   const sync = useSyncStatus();
+  const mainRef = useRef<HTMLElement>(null);
 
   if (!config.data) return null;
   if (!config.data.hasDbUrl) return <Setup onDone={refreshData} />;
@@ -30,9 +31,11 @@ export default function App() {
     <HashRouter>
       <RegisterNavigate />
       <TooltipProvider delayDuration={300}>
-        <div className="flex min-h-screen flex-col md:flex-row">
+        {/* One screen tall; only <main> scrolls, so the sidebar never moves. */}
+        <div className="flex h-full flex-col overflow-hidden md:flex-row">
           <Sidebar />
-          <main className="min-w-0 flex-1 px-5 py-6 md:px-10 md:py-8">
+          <main ref={mainRef} className="min-w-0 flex-1 overflow-y-auto px-5 py-6 md:px-10 md:py-8">
+            <ScrollToTop target={mainRef} />
             <div className="mx-auto w-full">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
@@ -49,6 +52,15 @@ export default function App() {
       </TooltipProvider>
     </HashRouter>
   );
+}
+
+/** New page → start at the top (the window used to do this; now <main> is the scroller). */
+function ScrollToTop({ target }: { target: RefObject<HTMLElement | null> }) {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    target.current?.scrollTo(0, 0);
+  }, [pathname, target]);
+  return null;
 }
 
 /** Lets non-component code (the actions shim) navigate, like the web app's redirect(). */

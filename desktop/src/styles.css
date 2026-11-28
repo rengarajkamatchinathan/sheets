@@ -13,3 +13,14 @@
   --font-inter: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
   --font-jetbrains: "JetBrains Mono Variable", ui-monospace, monospace;
 }
+
+/*
+ * App-window layout: the document itself never scrolls — only the main column does
+ * (see App.tsx). Keeps the sidebar fixed like a desktop app, whatever the page content.
+ */
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
