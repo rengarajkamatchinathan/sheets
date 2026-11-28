@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "DSA Log",
+  "productName": "D-Notes",
   "version": "0.1.0",
   "identifier": "com.dsalog.desktop",
   "build": {
@@ -12,12 +12,13 @@
   "app": {
     "windows": [
       {
-        "title": "DSA Log",
+        "title": "D-Notes",
         "width": 1360,
         "height": 880,
         "minWidth": 900,
         "minHeight": 600,
-        "center": true
+        "center": true,
+        "dragDropEnabled": false
       }
     ],
     "security": {

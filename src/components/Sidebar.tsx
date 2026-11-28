@@ -79,10 +79,10 @@ export function SidebarView({ path, actions = [] }: { path: string; actions?: Si
         style={{ width: open ? FULL : RAIL }}
         className="sticky top-0 hidden h-screen flex-none flex-col overflow-hidden border-r border-line bg-side py-4 transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] md:flex"
       >
-        <Link href="/" className="mb-6 flex h-10 items-center gap-3 px-[10px]" aria-label="DSA Log home">
+        <Link href="/" className="mb-6 flex h-10 items-center gap-3 px-[10px]" aria-label="D-Notes home">
           <Logo />
           <Label open={open} className="text-[17px] font-bold tracking-tight">
-            DSA Log
+            D-Notes
           </Label>
         </Link>
 
@@ -161,7 +161,7 @@ export function SidebarView({ path, actions = [] }: { path: string; actions?: Si
       <div className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-line bg-side/95 px-4 backdrop-blur md:hidden">
         <Link href="/" className="flex items-center gap-2.5">
           <Logo />
-          <span className="text-base font-bold tracking-tight">DSA Log</span>
+          <span className="text-base font-bold tracking-tight">D-Notes</span>
         </Link>
         <button
           type="button"
@@ -193,7 +193,7 @@ export function SidebarView({ path, actions = [] }: { path: string; actions?: Si
               <div className="mb-6 flex items-center justify-between">
                 <span className="flex items-center gap-2.5">
                   <Logo />
-                  <span className="text-base font-bold tracking-tight">DSA Log</span>
+                  <span className="text-base font-bold tracking-tight">D-Notes</span>
                 </span>
                 <button
                   type="button"
@@ -268,9 +268,15 @@ function Tip({ show, label, children }: { show: boolean; label: string; children
 
 function Logo() {
   return (
-    <span className="flex size-8 flex-none items-center justify-center rounded-lg bg-brand font-mono text-sm font-bold text-bg">
-      {"{}"}
-    </span>
+    <svg viewBox="64 64 896 896" aria-hidden="true" className="size-8 flex-none">
+      <path
+        d="M264 64H740L960 284V760A200 200 0 0 1 760 960H264A200 200 0 0 1 64 760V264A200 200 0 0 1 264 64Z"
+        className="fill-brand"
+      />
+      <path d="M740 64V224A60 60 0 0 0 800 284H960Z" className="fill-black/25" />
+      <circle cx="470" cy="620" r="150" fill="none" strokeWidth="100" className="stroke-bg" />
+      <rect x="570" y="250" width="100" height="570" rx="50" className="fill-bg" />
+    </svg>
   );
 }
 

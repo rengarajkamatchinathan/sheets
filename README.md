@@ -1,4 +1,4 @@
-# DSA Log
+# D-Notes
 
 Track daily DSA practice: topics → problems → markdown notes + solution code, with a progress dashboard (Easy/Medium/Hard gauge, activity heatmap, per-topic progress).
 

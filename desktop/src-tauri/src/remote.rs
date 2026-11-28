@@ -36,7 +36,7 @@ pub async fn verify(url: &str) -> Result<()> {
         .await?;
     let found: i64 = row.get(0);
     if found < 4 {
-        return Err(msg("connected, but this database doesn't have the DSA Log tables (topics, patterns, problems, snippets)"));
+        return Err(msg("connected, but this database doesn't have the D-Notes tables (topics, patterns, problems, snippets)"));
     }
     Ok(())
 }

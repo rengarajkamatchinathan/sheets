@@ -86,7 +86,7 @@ jobs:
         with:
           projectPath: desktop
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-          releaseName: "DSA Log Desktop ${{ github.ref_name }}"
+          releaseName: "D-Notes Desktop ${{ github.ref_name }}"
           releaseBody: "Unsigned builds for personal use. Download the installer for your OS below."
           # Published (not draft): installed apps check releases/latest for updates.
           releaseDraft: false

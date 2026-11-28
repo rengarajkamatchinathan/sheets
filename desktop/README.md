@@ -1,4 +1,4 @@
-# DSA Log — Desktop
+# D-Notes — Desktop
 
 Tauri 2 + Rust desktop version of the web app, on the same Neon database, working offline.
 Independent of the Vercel deployment: the web build ignores this folder (`tsconfig.json`
