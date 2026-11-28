@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "types": ["vite/client"],
+    "paths": {
+      "@/app/actions": ["./src/shims/actions.ts"],
+      "next/link": ["./src/shims/next-link.tsx"],
+      "next/navigation": ["./src/shims/next-navigation.ts"],
+      "next/dynamic": ["./src/shims/next-dynamic.tsx"],
+      "@/*": ["../src/*"],
+      "*": ["./node_modules/@types/*", "./node_modules/*", "../node_modules/@types/*", "../node_modules/*"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}

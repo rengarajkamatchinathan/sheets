@@ -1,0 +1,15 @@
+/* Bundled fonts (offline) standing in for next/font/google. */
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
+/* The web app's theme, tokens and component styles. */
+@import "../../src/app/globals.css";
+
+/* Tailwind only scans this folder by default; the shared components live in ../src. */
+@source "../../src/components";
+@source "../src";
+
+:root {
+  --font-inter: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-jetbrains: "JetBrains Mono Variable", ui-monospace, monospace;
+}
