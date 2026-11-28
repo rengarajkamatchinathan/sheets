@@ -23,10 +23,13 @@ export default defineConfig({
       { find: /^next\/link$/, replacement: here("./src/shims/next-link.tsx") },
       { find: /^next\/navigation$/, replacement: here("./src/shims/next-navigation.ts") },
       { find: /^next\/dynamic$/, replacement: here("./src/shims/next-dynamic.tsx") },
+      { find: /^server-only$/, replacement: here("./src/shims/server-only.ts") },
       { find: /^@\/(.*)$/, replacement: here("../src/$1") },
     ],
   },
   server: { port: 1420, strictPort: true, fs: { allow: [here("..")] } },
   envPrefix: ["VITE_", "TAURI_ENV_"],
+  // src/lib/dates.ts reads APP_TIMEZONE; leave it unset so it uses its default (Asia/Kolkata), like the web app.
+  define: { "process.env.APP_TIMEZONE": "undefined" },
   build: { target: "es2022", outDir: "dist", emptyOutDir: true },
 });

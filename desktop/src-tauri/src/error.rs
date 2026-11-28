@@ -9,6 +9,10 @@ pub enum Error {
     Keyring(#[from] keyring::Error),
     #[error("database: {0}")]
     Postgres(#[from] tokio_postgres::Error),
+    #[error("local database: {0}")]
+    Sqlite(#[from] rusqlite::Error),
+    #[error("io: {0}")]
+    Io(#[from] std::io::Error),
     #[error("tls: {0}")]
     Tls(#[from] native_tls::Error),
 }
