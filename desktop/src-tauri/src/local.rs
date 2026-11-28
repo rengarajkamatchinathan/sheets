@@ -243,11 +243,15 @@ fn record_update(tx: &Transaction, t: &Table, id: i64, diff: Map<String, Value>,
 }
 
 /// Deletes the row (children cascade locally, as on the server) and queues it.
+/// The op carries the row's parent ids, so sync knows which pages it affected.
 pub fn delete(tx: &Transaction, t: &Table, id: i64) -> Result<bool> {
+    let parents: Vec<&str> = t.cols.iter().filter(|c| c.refs.is_some()).map(|c| c.name).collect();
+    let data = if parents.is_empty() { Some(Row::new()) } else { get(tx, t, id, &parents)? };
+    let Some(data) = data else { return Ok(false) };
     if !apply_delete(tx, t, id)? {
         return Ok(false);
     }
-    push_op(tx, t, id, "delete", &json!({}))?;
+    push_op(tx, t, id, "delete", &Value::Object(data))?;
     Ok(true)
 }
 
