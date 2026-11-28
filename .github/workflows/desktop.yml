@@ -1,0 +1,80 @@
+# Builds the desktop app (desktop/) for Windows, macOS and Linux and attaches the installers
+# to a draft GitHub Release. Runs only when a `desktop-v*` tag is pushed (or by hand) —
+# never on normal pushes, and it has nothing to do with the Vercel deployment.
+#
+#   git tag desktop-v0.1.0 && git push origin desktop-v0.1.0
+#
+# Builds are unsigned (personal use): Windows SmartScreen and macOS Gatekeeper will warn
+# on first launch. macOS: right-click the app → Open, once.
+name: Desktop release
+
+on:
+  push:
+    tags: ["desktop-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write # create the draft release and upload installers
+
+concurrency:
+  group: desktop-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            args: ""
+          - os: macos-latest # Apple Silicon
+            args: "--target aarch64-apple-darwin"
+          - os: macos-latest # Intel
+            args: "--target x86_64-apple-darwin"
+          - os: ubuntu-22.04
+            args: ""
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Linux system libraries (WebKitGTK, OpenSSL, Secret Service)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libdbus-1-dev pkg-config
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri -> target
+
+      # Only the desktop app's dependencies: the shared UI code in src/ is bundled from
+      # desktop/node_modules (see desktop/vite.config.ts), so the web app's install isn't needed.
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm ci
+
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: desktop
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          releaseName: "DSA Log Desktop ${{ github.ref_name }}"
+          releaseBody: "Unsigned builds for personal use. Download the installer for your OS below."
+          releaseDraft: true
+          prerelease: false
+          # Manual runs (no tag) still produce downloadable installers on the run page.
+          uploadWorkflowArtifacts: true
+          args: ${{ matrix.args }}
