@@ -7,6 +7,7 @@ import { useCommand, refreshData } from "./data";
 import { setNavigate } from "./nav";
 import { useSyncStatus } from "./sync";
 import SyncBadge from "./SyncBadge";
+import SwipeNav from "./SwipeNav";
 import Setup from "./routes/Setup";
 import Dashboard from "./routes/Dashboard";
 import TopicsPage from "./routes/Topics";
@@ -30,6 +31,7 @@ export default function App() {
   return (
     <HashRouter>
       <RegisterNavigate />
+      <SwipeNav />
       <TooltipProvider delayDuration={300}>
         {/* One screen tall; only <main> scrolls, so the sidebar never moves. */}
         <div className="flex h-full flex-col overflow-hidden md:flex-row">
