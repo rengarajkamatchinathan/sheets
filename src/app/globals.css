@@ -2,6 +2,11 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Never scan the desktop app's dependencies or Rust build output (locked .exe files, GBs of
+   artifacts). Only these two: the desktop build imports this file and needs desktop/src. */
+@source not "../../desktop/node_modules";
+@source not "../../desktop/src-tauri";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

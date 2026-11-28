@@ -44,15 +44,26 @@ function writePinned(v: boolean) {
   window.dispatchEvent(new Event(PIN_EVENT));
 }
 
-export default function Sidebar() {
-  return <SidebarView path={usePathname()} />;
+/** Extra button shown above the theme toggle (the desktop app uses it for "Update"). */
+export type SidebarAction = {
+  key: string;
+  label: string;
+  Icon: React.ComponentType<{ className?: string }>;
+  onClick: () => void;
+  /** Draw attention (brand colour + dot). */
+  highlight?: boolean;
+  disabled?: boolean;
+};
+
+export default function Sidebar({ actions }: { actions?: SidebarAction[] }) {
+  return <SidebarView path={usePathname()} actions={actions} />;
 }
 
 /**
  * Desktop: collapsible sidebar — an icon rail or full width, toggled only by the
  * button at the bottom (remembered across visits). Mobile: top bar + slide-in menu.
  */
-export function SidebarView({ path }: { path: string }) {
+export function SidebarView({ path, actions = [] }: { path: string; actions?: SidebarAction[] }) {
   const open = useSyncExternalStore(subscribe, readPinned, () => false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useThemePref();
@@ -102,6 +113,24 @@ export function SidebarView({ path }: { path: string }) {
           <Label open={open} className="px-[11px] pb-2 text-xs text-faint">
             Sheet: NeetCode 150
           </Label>
+          {actions.map((a) => (
+            <Tip key={a.key} show={!open} label={a.label}>
+              <button
+                type="button"
+                onClick={a.onClick}
+                disabled={a.disabled}
+                aria-label={a.label}
+                className={cn(
+                  "relative flex h-10 items-center gap-3 rounded-lg px-[11px] text-sm disabled:opacity-60",
+                  a.highlight ? "text-brand-soft hover:bg-brand/[0.08]" : "text-mute hover:bg-fg/[0.04] hover:text-ink",
+                )}
+              >
+                <a.Icon className="size-[18px] flex-none" />
+                {a.highlight && <span className="absolute top-2 left-[26px] size-1.5 rounded-full bg-brand" />}
+                <Label open={open}>{a.label}</Label>
+              </button>
+            </Tip>
+          ))}
           <Tip show={!open} label={`Theme: ${theme.label}`}>
             <button
               type="button"
@@ -193,11 +222,27 @@ export function SidebarView({ path }: { path: string }) {
                   </Link>
                 );
               })}
+              <div className="mt-auto" />
+              {actions.map((a) => (
+                <button
+                  key={a.key}
+                  type="button"
+                  onClick={a.onClick}
+                  disabled={a.disabled}
+                  className={cn(
+                    "flex h-12 items-center gap-3 rounded-lg px-3 text-[15px] disabled:opacity-60",
+                    a.highlight ? "text-brand-soft hover:bg-brand/[0.08]" : "text-mute hover:bg-fg/[0.04] hover:text-ink",
+                  )}
+                >
+                  <a.Icon className="size-5" />
+                  {a.label}
+                </button>
+              ))}
               <button
                 type="button"
                 onClick={theme.cycle}
                 aria-label={`Theme: ${theme.label}. Click to change`}
-                className="mt-auto flex h-12 items-center gap-3 rounded-lg px-3 text-[15px] text-mute hover:bg-fg/[0.04] hover:text-ink"
+                className="flex h-12 items-center gap-3 rounded-lg px-3 text-[15px] text-mute hover:bg-fg/[0.04] hover:text-ink"
               >
                 <theme.Icon className="size-5" />
                 Theme: {theme.label}

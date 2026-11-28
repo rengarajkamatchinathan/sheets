@@ -17,6 +17,8 @@
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@lezer/highlight": "^1.2.5",
     "@tauri-apps/api": "^2.12.5",
+    "@tauri-apps/plugin-process": "^2.4.0",
+    "@tauri-apps/plugin-updater": "^2.14.1",
     "@tiptap/extension-image": "^3.35.1",
     "@tiptap/extension-subscript": "^3.35.1",
     "@tiptap/extension-superscript": "^3.35.1",

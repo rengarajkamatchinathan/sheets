@@ -1,8 +1,12 @@
-# Builds the desktop app (desktop/) for Windows, macOS and Linux and attaches the installers
-# to a draft GitHub Release. Runs only when a `desktop-v*` tag is pushed (or by hand) —
-# never on normal pushes, and it has nothing to do with the Vercel deployment.
+# Builds the desktop app (desktop/) for Windows, macOS and Linux and publishes the installers
+# as a GitHub Release. Runs only when a `desktop-v*` tag is pushed (or by hand) — never on
+# normal pushes, and it has nothing to do with the Vercel deployment.
 #
-#   git tag desktop-v0.1.0 && git push origin desktop-v0.1.0
+#   git tag desktop-v0.2.0 && git push origin desktop-v0.2.0
+#
+# The version comes from the tag. The release includes signed updater files (latest.json),
+# so installed apps show "Update to v0.2.0" in the sidebar. Needs the repository secret
+# TAURI_SIGNING_PRIVATE_KEY (contents of ~/.tauri/dsa-log-updater.key).
 #
 # Builds are unsigned (personal use): Windows SmartScreen and macOS Gatekeeper will warn
 # on first launch. macOS: right-click the app → Open, once.
@@ -61,6 +65,15 @@ jobs:
 
       # Only the desktop app's dependencies: the shared UI code in src/ is bundled from
       # desktop/node_modules (see desktop/vite.config.ts), so the web app's install isn't needed.
+      - name: Version from tag (desktop-v1.2.3 → 1.2.3)
+        if: github.ref_type == 'tag'
+        working-directory: desktop/src-tauri
+        shell: bash
+        run: |
+          v="${GITHUB_REF_NAME#desktop-v}"
+          node -e "const f='tauri.conf.json',c=require('./'+f);c.version=process.argv[1];require('fs').writeFileSync(f,JSON.stringify(c,null,2)+'
+')" "$v"
+
       - name: Install desktop dependencies
         working-directory: desktop
         run: npm ci
@@ -68,12 +81,15 @@ jobs:
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signs the update bundles; installed apps only accept updates signed with this key.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         with:
           projectPath: desktop
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
           releaseName: "DSA Log Desktop ${{ github.ref_name }}"
           releaseBody: "Unsigned builds for personal use. Download the installer for your OS below."
-          releaseDraft: true
+          # Published (not draft): installed apps check releases/latest for updates.
+          releaseDraft: false
           prerelease: false
           # Manual runs (no tag) still produce downloadable installers on the run page.
           uploadWorkflowArtifacts: true
