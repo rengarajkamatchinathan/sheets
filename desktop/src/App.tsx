@@ -8,7 +8,12 @@ import { setNavigate } from "./nav";
 import { useSyncStatus } from "./sync";
 import SyncBadge from "./SyncBadge";
 import Setup from "./routes/Setup";
-import Placeholder from "./routes/Placeholder";
+import Dashboard from "./routes/Dashboard";
+import TopicsPage from "./routes/Topics";
+import TopicPage from "./routes/Topic";
+import ProblemPage from "./routes/Problem";
+import NewProblemPage from "./routes/NewProblem";
+import { NotFound } from "./routes/common";
 
 type Config = { hasDbUrl: boolean };
 
@@ -30,12 +35,12 @@ export default function App() {
           <main className="min-w-0 flex-1 px-5 py-6 md:px-10 md:py-8">
             <div className="mx-auto w-full">
               <Routes>
-                <Route path="/" element={<Placeholder title="Dashboard" />} />
-                <Route path="/topics" element={<Placeholder title="Topics" />} />
-                <Route path="/topics/:slug" element={<Placeholder title="Topic" />} />
-                <Route path="/problems/new" element={<Placeholder title="New problem" />} />
-                <Route path="/problems/:id" element={<Placeholder title="Problem" />} />
-                <Route path="*" element={<Placeholder title="Not found" />} />
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/topics" element={<TopicsPage />} />
+                <Route path="/topics/:slug" element={<TopicPage />} />
+                <Route path="/problems/new" element={<NewProblemPage />} />
+                <Route path="/problems/:id" element={<ProblemPage />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </div>
           </main>

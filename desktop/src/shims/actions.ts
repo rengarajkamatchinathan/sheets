@@ -29,7 +29,7 @@ function toInt(v: string) {
 /** Runs a write, then re-renders the current screen from the local store. */
 async function write<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   const out = await invoke<T>(cmd, args);
-  refreshData();
+  await refreshData();
   return out;
 }
 
