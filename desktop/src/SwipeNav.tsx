@@ -37,7 +37,11 @@ function scrollsHorizontally(el: Element | null, dx: number): boolean {
 const resist = (x: number) => 1 - Math.exp(-2.2 * x);
 
 export default function SwipeNav() {
+  // `navigate` changes identity on every navigation; read it through a ref so the gesture
+  // listener (and its pending frame) isn't torn down mid-swipe.
   const navigate = useNavigate();
+  const navRef = useRef(navigate);
+  navRef.current = navigate;
   const location = useLocation();
   const navType = useNavigationType();
   const chip = useRef<HTMLDivElement>(null);
@@ -74,6 +78,7 @@ export default function SwipeNav() {
     let acc = 0; // + = back (fingers moved right)
     let active = false;
     let blocked = false;
+    let cooling = false; // just navigated: ignore the rest of this gesture's momentum
     let timer: number | undefined;
     let frame = 0;
 
@@ -108,6 +113,24 @@ export default function SwipeNav() {
       });
     };
 
+    /** Clear the drag state synchronously (no frame to lose). */
+    const hideNow = () => {
+      cancelAnimationFrame(frame);
+      const el = page();
+      if (el) {
+        el.style.transition = "none";
+        el.style.transform = "";
+        el.style.opacity = "";
+      }
+      const c = chip.current;
+      if (c) {
+        c.style.transition = "none";
+        c.style.opacity = "0";
+        c.dataset.armed = "";
+      }
+      if (ring.current) ring.current.style.strokeDasharray = "0 125.7";
+    };
+
     const release = () => {
       const armed = Math.abs(acc) >= THRESHOLD;
       const back = acc > 0;
@@ -116,8 +139,10 @@ export default function SwipeNav() {
       blocked = false;
       if (armed) {
         pendingEnter.current = back ? 1 : -1;
-        paint(false);
-        navigate(back ? -1 : 1);
+        cooling = true; // until the touchpad has been quiet for a moment
+        timer = window.setTimeout(() => (cooling = false), RELEASE_GAP);
+        hideNow();
+        navRef.current(back ? -1 : 1);
       } else {
         paint(true); // spring back
       }
@@ -125,6 +150,10 @@ export default function SwipeNav() {
 
     const onWheel = (e: WheelEvent) => {
       window.clearTimeout(timer);
+      if (cooling) {
+        timer = window.setTimeout(() => (cooling = false), RELEASE_GAP);
+        return;
+      }
       timer = window.setTimeout(release, RELEASE_GAP);
       if (blocked) return;
 
@@ -152,9 +181,9 @@ export default function SwipeNav() {
     return () => {
       window.removeEventListener("wheel", onWheel);
       window.clearTimeout(timer);
-      cancelAnimationFrame(frame);
+      hideNow();
     };
-  }, [navigate]);
+  }, []);
 
   return (
     <div
